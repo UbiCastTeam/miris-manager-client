@@ -2,9 +2,9 @@
 
 A Python3 client to use UbiCast Campus Manager remote control.
 
-This client allows you to integrate a device in Campus Manager and to control it from Campus Manager.
+This client allows you to integrate a device in Campus Manager in order to control it.
 
-Here is the list of actions that can be send to the client depending on client's supported capabilities:
+Here is the list of actions that can be sent to the client depending on its supported capabilities:
 
     # Basic actions, not related to any capabilities
     SHUTDOWN: capability: none, description: Shutdown system
