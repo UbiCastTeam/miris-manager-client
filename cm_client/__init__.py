@@ -255,7 +255,7 @@ class CampusManagerClient():
         elif action == 'PING':
             pass
         else:
-            self.handle_action(action, params)
+            return self.handle_action(action, params)
 
     def handle_action(self, action, params):
         raise NotImplementedError('Your class should override the "handle_action" method.')
