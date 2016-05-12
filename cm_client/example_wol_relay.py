@@ -39,7 +39,7 @@ class WOLRelay(CampusManagerClient):
                 raise Exception('No stream URI to play.')
             if '"' in stream_uri or '\'' in stream_uri:
                 raise Exception('Invalid stream URI.')
-            os.system('(vlc "%s" &)' % stream_uri.replace('"', ''))
+            os.system('(vlc "%s" &)' % stream_uri)
         else:
             raise Exception('Unrecognized action.')
 

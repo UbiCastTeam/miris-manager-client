@@ -24,9 +24,11 @@ class CampusManagerClient():
     CONF_PATH = os.path.expanduser('~/.cm_client.py')
     CONF = {
         'LOG_LEVEL': 'INFO',  # Logging level
+        'URL': 'https://campusmanager',  # URL of Campus Manager server
+        'MAC': '',  # Mac address of the client (an unique value per client, leave empty to get it automatically)
         'API_KEY': '',  # API key of this system in Campus Manager
         'SECRET_KEY': '',  # Secret key of this system in Campus Manager, used to sign messages
-        'URL': 'https://campusmanager',  # URL of Campus Manager server
+        'WATCHDOG': False,  # Notify systemd watchdog
         'LONG_POLLING_PATH': '/remote-event/v2',
         'COMMAND_STATUS_PATH': '/fleet/api/v2/command-status/',
         'CHECK_SSL': False,  # Check server SSL certificate
@@ -113,12 +115,16 @@ class CampusManagerClient():
         s.close()
         logger.info('Local IP is %s.', local_ip)
         # Get MAC address
-        mac = uuid.getnode()
-        self.mac = ':'.join(('%012x' % mac)[i:i + 2] for i in range(0, 12, 2))
+        if self.CONF.get('MAC'):
+            self.mac = self.CONF['MAC']
+        else:
+            mac = uuid.getnode()
+            self.mac = ':'.join(('%012x' % mac)[i:i + 2] for i in range(0, 12, 2))
+        logger.info('Client mac address is: %s.', self.mac)
         # Get capabilities
         capabilities = json.dumps(self.CONF['CAPABILITIES'])
         # Check if systemd-notify should be called
-        run_systemd_notify = os.system('which systemd-notify') == 0
+        run_systemd_notify = self.CONF.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
         logger.info('Starting connection loop using url: %s.', self.long_polling_url)
         last_con_error = None
@@ -208,8 +214,9 @@ class CampusManagerClient():
             rhmac = base64.b64decode(remote_hmac)
         except Exception:
             return 'the received hmac is invalid.'
-        diff = (datetime.datetime.utcnow() - rdate).seconds
-        if diff > 300 or diff < -300:
+        utcnow = datetime.datetime.utcnow()
+        diff = utcnow - rdate if utcnow > rdate else rdate - utcnow
+        if diff.seconds > 300:
             return 'the difference between the request time and the current time is too large.'
         to_sign = 'time=%s|api_key=%s|mac=%s' % (remote_time, self.CONF['API_KEY'], self.mac)
         hm = hmac.new(
