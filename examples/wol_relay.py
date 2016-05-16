@@ -13,7 +13,7 @@ logger = logging.getLogger('cm_wol_relay')
 
 
 class WOLRelay(CampusManagerClient):
-    CONF_PATH = os.path.expanduser('~/.cm_wol_relay.py')
+    CONF_PATH = os.path.expanduser('~/.cm_example.py')
     CONF = dict(CampusManagerClient.CONF)
     CONF.update({
         'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
@@ -41,7 +41,7 @@ class WOLRelay(CampusManagerClient):
                 raise Exception('Invalid stream URI.')
             os.system('(vlc "%s" &)' % stream_uri)
         else:
-            raise Exception('Unrecognized action.')
+            raise Exception('Unsupported action: %s.' % action)
 
     def send_wake_on_lan(self, params):
         # Check that arguments are valid
