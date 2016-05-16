@@ -16,21 +16,6 @@ import subprocess
 
 logger = logging.getLogger('cm_client.lib')
 
-ALLOWED_STATUS = (
-    'UNKNOWN',
-    'OFFLINE',
-    'HOME',
-    'PROCESSING',
-    'REVIEW_IDLE',
-    'REVIEW_PROCESSING',
-    'DETECTION',
-    'LOADING',
-    'RECORDER_IDLE',
-    'RECORDING',
-    'STREAMING',
-    'RECORDER_ERROR',
-)
-
 
 def get_signature(client):
     if not client.CONF.get('SECRET_KEY') or not client.CONF.get('API_KEY'):
@@ -122,8 +107,6 @@ def post_screenshot(client, path, file_name=None):
 def post_status(client, status=None, status_info=None, remaining_space=None, remaining_time=None):
     data = dict()
     if status is not None:
-        if status not in ALLOWED_STATUS:
-            raise ValueError('Invalid status given. Allowed statuses are: %s.' % ','.join(ALLOWED_STATUS))
         data['status'] = status
     if status_info is not None:
         data['status_info'] = status_info

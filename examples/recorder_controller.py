@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from cm_client import CampusManagerClient
+from cm_client import lib as cm_lib
 
 logger = logging.getLogger('cm_recorder_controller')
 
@@ -33,10 +34,12 @@ class RecorderController(CampusManagerClient):
 
         elif action == 'START_RECORDING':
             logger.info('Starting recording with params %s', params)
+            cm_lib.post_status(self, status='recording', remaining_space='auto')
             # TODO
 
         elif action == 'STOP_RECORDING':
             logger.info('Stopping recording.')
+            cm_lib.post_status(self, status='recorder_idle', remaining_space='auto')
             # TODO
 
         elif action == 'LIST_PROFILES':
