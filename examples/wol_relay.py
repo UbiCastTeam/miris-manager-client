@@ -20,12 +20,12 @@ class WOLRelay(CampusManagerClient):
             'wol_relay': {'version': 1},
             'player': {'version': 1},
         },
-        'WOL_PATH': 'wakeonlan',  # Path to wake on lan binary
+        'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary
     })
 
     def handle_action(self, action, params):
         # This method must be implemented in your client
-        if action == 'WAKE_ON_LAN_SEND':  # wol_relay capability
+        if action == 'WAKE_ON_LAN':  # wol_relay capability
             # Send wake on lan
             success, message = self.send_wake_on_lan(params)
             logger.info('Running wake on lan: success: %s, message: %s', success, message)
@@ -35,6 +35,7 @@ class WOLRelay(CampusManagerClient):
             # Play a video stream
             # http://www.sample-videos.com/video/mp4/240/big_buck_bunny_240p_1mb.mp4
             stream_uri = params.get('stream_uri')
+            logger.info('Playing stream "%s".', stream_uri)
             if not stream_uri:
                 raise Exception('No stream URI to play.')
             if '"' in stream_uri or '\'' in stream_uri:
