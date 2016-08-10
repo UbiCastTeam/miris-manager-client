@@ -56,7 +56,7 @@ class CampusManagerClient():
             except ImportError as e:
                 logger.error('Unable to load config file %s: %s', self.CONF_PATH, e)
             else:
-                logger.info('Config file loaded.')
+                logger.info('Config file "%s" loaded.', self.CONF_PATH)
                 for key in dir(conf):
                     if not key.startswith('_'):
                         self.CONF[key] = getattr(conf, key)
