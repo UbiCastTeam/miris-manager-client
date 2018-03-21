@@ -87,6 +87,20 @@ class CampusManagerClient():
             self.cm_host, self.cm_port = self.cm_host.split(':')
             self.cm_port = int(self.cm_port)
         self.cm_url = url
+        # Get local IP address
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((self.cm_host, self.cm_port))
+        self.local_ip = s.getsockname()[0]
+        self.hostname = socket.gethostname()
+        s.close()
+        logger.info('Local IP is %s.', self.local_ip)
+        # Get MAC address
+        if self.CONF.get('MAC'):
+            self.mac = self.CONF['MAC']
+        else:
+            mac = uuid.getnode()
+            self.mac = ':'.join(('%012x' % mac)[i:i + 2] for i in range(0, 12, 2))
+        logger.info('Client mac address is: %s.', self.mac)
         # Start connection loop
         try:
             self.connection_loop()
@@ -114,20 +128,6 @@ class CampusManagerClient():
         return self.cm_url + self.CONF['URLS'][name]
 
     def connection_loop(self):
-        # Get local IP address
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect((self.cm_host, self.cm_port))
-        local_ip = s.getsockname()[0]
-        hostname = socket.gethostname()
-        s.close()
-        logger.info('Local IP is %s.', local_ip)
-        # Get MAC address
-        if self.CONF.get('MAC'):
-            self.mac = self.CONF['MAC']
-        else:
-            mac = uuid.getnode()
-            self.mac = ':'.join(('%012x' % mac)[i:i + 2] for i in range(0, 12, 2))
-        logger.info('Client mac address is: %s.', self.mac)
         # Get capabilities
         capabilities = json.dumps(self.CONF['CAPABILITIES'])
         # Check if systemd-notify should be called
@@ -143,9 +143,9 @@ class CampusManagerClient():
                 req = requests.get(
                     url=self.get_url('LONG_POLLING'),
                     headers=dict(
-                        ip=local_ip,
+                        ip=self.local_ip,
                         id=self.mac,
-                        name=hostname,
+                        name=self.hostname,
                         capabilities=capabilities,
                         **signature
                     ),
