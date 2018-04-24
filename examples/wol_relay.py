@@ -1,9 +1,9 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+'''
 An example of Campus Manager client usage.
 This script is intended to create devices acting as wake on lan relay and video displayer.
-"""
+'''
 import logging
 import os
 import re
@@ -13,15 +13,13 @@ logger = logging.getLogger('cm_wol_relay')
 
 
 class WOLRelay(CampusManagerClient):
-    CONF_PATH = os.path.expanduser('~/.cm_example.py')
-    CONF = dict(CampusManagerClient.CONF)
-    CONF.update({
+    DEFAULT_CONF = {
         'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
             'wol_relay': {'version': 1},
             'player': {'version': 1},
         },
         'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary
-    })
+    }
 
     def handle_action(self, action, params):
         # This method must be implemented in your client
@@ -60,9 +58,9 @@ class WOLRelay(CampusManagerClient):
             ip_address = params['ip']
         # Launch wake on lan
         if ip_address:
-            cmd = '%s -i "%s" "%s"' % (self.CONF['WOL_PATH'], ip_address, mac_address)
+            cmd = '%s -i "%s" "%s"' % (self.conf['WOL_PATH'], ip_address, mac_address)
         else:
-            cmd = '%s "%s"' % (self.CONF['WOL_PATH'], mac_address)
+            cmd = '%s "%s"' % (self.conf['WOL_PATH'], mac_address)
         ret_code = os.system(cmd)
         if ret_code != 0:
             return False, 'Tool returned code %s.' % (ret_code >> 8)
@@ -70,4 +68,8 @@ class WOLRelay(CampusManagerClient):
 
 
 if __name__ == '__main__':
-    WOLRelay()
+    client = WOLRelay()
+    try:
+        client.long_polling_loop()
+    except KeyboardInterrupt:
+        logger.info('KeyboardInterrupt received, stopping application.')
