@@ -127,7 +127,7 @@ class CampusManagerClient():
         self.run_systemd_notify = self.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
         logger.info('Campus Manager server is %s.', self.conf['URL'])
-        logger.info('Starting connection loop using url: %s.', self.get_url('LONG_POLLING'))
+        logger.info('Starting connection loop using url: %s.', self.get_url_info('LONG_POLLING'))
         while True:
             start = datetime.datetime.utcnow()
             success = self.call_long_polling()
