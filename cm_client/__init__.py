@@ -7,9 +7,11 @@ import datetime
 import json
 import logging
 import os
+import sys
 import requests
 import time
 import traceback
+import signal
 from cm_client import lib as cm_lib
 from cm_client import signing
 
@@ -128,7 +130,18 @@ class CampusManagerClient():
         # Start connection loop
         logger.info('Campus Manager server is %s.', self.conf['URL'])
         logger.info('Starting connection loop using url: %s.', self.get_url_info('LONG_POLLING'))
-        while True:
+        self.long_polling_loop_running = True
+
+        def exit_handler(signum, frame):
+            message = 'Loop as been interrupted'
+            self.long_polling_loop_running = False
+            logger.warning(message)
+            sys.exit(1)
+
+        signal.signal(signal.SIGINT, exit_handler)
+        signal.signal(signal.SIGTERM, exit_handler)
+
+        while self.long_polling_loop_running:
             start = datetime.datetime.utcnow()
             success = self.call_long_polling()
             if not success:
