@@ -46,4 +46,8 @@ API_CALLS = {
     'SET_STATUS': {'method': 'post', 'url': '/api/v3/fleet/systems/set-status/'},
     'SET_SCREENSHOT': {'method': 'post', 'url': '/api/v3/fleet/systems/set-screenshot/'},
     'REGISTER_SYSTEM': {'method': 'post', 'url': '/api/v3/fleet/systems/register/'},
+    'GET_MESSAGE': {'method': 'get', 'url': '/api/v3/fleet/messages/get/'},
+    'ADD_MESSAGE': {'method': 'post', 'url': '/api/v3/fleet/messages/add/'},
+    'ARCHIVE_MESSAGE': {'method': 'post', 'url': '/api/v3/fleet/messages/archive/'},
+    'DELETE_MESSAGE': {'method': 'post', 'url': '/api/v3/fleet/messages/delete/'},
 }
