@@ -29,7 +29,7 @@ class ScreenController(CampusManagerClient):
 
         elif action == 'GET_SCREENSHOT':
             self.set_status(remaining_space='auto')  # Send remaining space to Campus Manager
-            self.set_screenshot('/var/lib/AccountsService/icons/%s' % (os.env.get('USER') or 'root'), file_name='screen.png')
+            self.set_screenshot('/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'), file_name='screen.png')
             logger.info('Screenshot sent.')
 
         elif action == 'SIMULATE_CLICK':
