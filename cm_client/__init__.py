@@ -222,6 +222,13 @@ class CampusManagerClient():
         response = self.api_request('SET_INFO', data=data)
         return response
 
+    def update_capabilities(self):
+        data = dict()
+        data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
+        # Make API request
+        response = self.api_request('SET_INFO', data=data)
+        return response
+
     def set_status(self, status=None, status_info=None, remaining_space=None, remaining_time=None):
         data = dict()
         if status is not None:
