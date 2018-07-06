@@ -4,24 +4,25 @@
 Campus Manager client library
 This module is not intended to be used directly, only the client class should be used.
 '''
-import imp
+import json
 import logging
 import os
 import re
 import socket
 import subprocess
 import uuid
-from cm_client import conf as base_conf
 
 logger = logging.getLogger('cm_client.lib')
+
+BASE_CONF_PATH = os.path.join(os.path.dirname(__file__), 'conf.json')
 
 
 def load_conf(default_conf=None, local_conf=None):
     # copy default configuration
-    conf = dict()
-    for key in dir(base_conf):
-        if not key.startswith('_'):
-            conf[key] = getattr(base_conf, key)
+    with open(BASE_CONF_PATH, 'r') as fo:
+        content = fo.read()
+    content = re.sub(r'\n\s*//.*', '\n', content)  # remove comments
+    conf = json.loads(content)
     # update with default and local configuration
     for index, conf_override in enumerate((default_conf, local_conf)):
         if not conf_override:
@@ -32,15 +33,17 @@ def load_conf(default_conf=None, local_conf=None):
                     conf[key] = val
         elif isinstance(conf_override, str):
             if os.path.exists(conf_override):
-                try:
-                    conf_mod = imp.load_source('conf_mod_%s' % index, conf_override)
-                except ImportError as e:
-                    logger.error('Unable to load config file %s: %s', conf_override, e)
+                with open(conf_override, 'r') as fo:
+                    content = fo.read()
+                content = re.sub(r'\n\s*//.*', '\n', content)  # remove comments
+                conf_mod = json.loads(content) if content else None
+                if not conf_mod:
+                    logger.info('Config file "%s" is empty.', conf_override)
                 else:
                     logger.info('Config file "%s" loaded.', conf_override)
-                    for key in dir(conf_mod):
-                        if not key.startswith('_'):
-                            conf[key] = getattr(conf_mod, key)
+                    if not isinstance(conf_mod, dict):
+                        raise ValueError('The configuration in "%s" is not a dict.' % conf_override)
+                    conf.update(conf_mod)
             else:
                 logger.info('Config file does not exists, using default config.')
         else:
@@ -56,16 +59,14 @@ def update_conf(local_conf, key, value):
         return
     content = ''
     if os.path.isfile(local_conf):
-        with open(local_conf, 'r') as fd:
-            content = fd.read()
+        with open(local_conf, 'r') as fo:
+            content = fo.read()
         content = content.strip()
-    new_content = ''
-    for line in content.split('\n'):
-        if not line.startswith(key):
-            new_content += '%s\n' % line
-    new_content += '%s = \'%s\'\n' % (key, value)
-    with open(local_conf, 'w') as fd:
-        fd.write(new_content)
+    data = json.loads(content) if content else dict()
+    data[key] = value
+    new_content = json.dumps(data, sort_keys=True, indent=4)
+    with open(local_conf, 'w') as fo:
+        fo.write(new_content)
     logger.info('Configuration file "%s" updated: "%s" set to "%s".', local_conf, key, value)
 
 

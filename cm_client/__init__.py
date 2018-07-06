@@ -21,7 +21,7 @@ logger = logging.getLogger('cm_client')
 
 class CampusManagerClient():
     DEFAULT_CONF = None  # can be either a path or a dict
-    LOCAL_CONF = os.path.expanduser('~/.cm_client.py')  # can be either a path or a dict
+    LOCAL_CONF = os.path.expanduser('~/.cm_client.json')  # can be either a path or a dict
 
     def __init__(self, setup_logging=True):
         # Setup logging
