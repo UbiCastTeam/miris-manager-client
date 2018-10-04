@@ -116,3 +116,48 @@ def get_remaining_space():
                 except ValueError:
                     pass
     return remaining_space
+
+
+def get_ssh_public_key():
+    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
+    ssh_dir = os.path.dirname(ssh_key_path)
+    if not os.path.exists(ssh_dir):
+        os.makedirs(ssh_dir)
+        os.chmod(ssh_dir, 0o700)
+    if os.path.exists(ssh_key_path):
+        if not os.path.exists(ssh_key_path + '.pub'):
+            raise Exception('Weird state detetected: "%s" exists but not "%s" !' % (ssh_key_path, ssh_key_path + '.pub'))
+        logger.info('Using existing SSH key: "%s".', ssh_key_path)
+    else:
+        logger.info('Creating new SSH key: "%s".', ssh_key_path)
+        p = subprocess.Popen(['ssh-keygen', '-b', '4096', '-f', ssh_key_path, '-N', ''], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.communicate(input=b'\n\n\n')
+        if p.returncode != 0:
+            out = p.stdout.decode('utf-8') + '\n' + p.stderr.decode('utf-8')
+            raise Exception('Failed to generate SSH key:\n%s' % out)
+        os.chmod(ssh_key_path, 0o600)
+        os.chmod(ssh_key_path + '.pub', 0o600)
+    with open(ssh_key_path + '.pub', 'r') as fo:
+        public_key = fo.read()
+    return public_key
+
+
+def start_tunnel(command):
+    if not command.startswith('ssh'):
+        # TODO: improve the command check to be sure it is what expected: an ssh tunnel
+        raise ValueError('Invalid command received.')
+    if globals().get('_ssh_process'):
+        raise Exception('The SSH tunnel is already running.')
+    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
+    command = 'ssh -i "%s" -o "IdentitiesOnly yes"%s' % (ssh_key_path, command[3:])
+    logger.info('Running following command to establish SSH tunnel: %s', command)
+    p = subprocess.Popen(command, shell=True)
+    globals()['_ssh_process'] = p
+    # TODO: check that the tunnel is running in background and restart it if it dies
+
+
+def stop_tunnel():
+    p = globals().get('_ssh_process')
+    if p:
+        p.kill()
+        del globals()['_ssh_process']

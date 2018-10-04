@@ -252,3 +252,11 @@ class CampusManagerClient():
                 screenshot=(file_name or os.path.basename(path), file_obj)
             ))
         return response
+
+    def establish_tunnel(self):
+        public_key = cm_lib.get_ssh_public_key()
+        response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
+        cm_lib.start_tunnel(response['command'])
+
+    def close_tunnel(self):
+        cm_lib.stop_tunnel()

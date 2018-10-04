@@ -46,6 +46,7 @@
         "GET_MESSAGE": {"method": "get", "url": "/api/v3/fleet/messages/get/"},
         "ADD_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/add/"},
         "ARCHIVE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/archive/"},
-        "DELETE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/delete/"}
+        "DELETE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/delete/"},
+        "PREPARE_TUNNEL": {"method": "post", "url": "/api/v3/fleet/proxy/prepare-tunnel/"}
     }
 }
