@@ -12,6 +12,8 @@ import requests
 import time
 import traceback
 import signal
+import pexpect
+import re
 from cm_client import lib as cm_lib
 from cm_client import signing
 
@@ -45,6 +47,25 @@ class CampusManagerClient():
             logger.debug('Logging conf set.')
         self.run_systemd_notify = False
         self.last_lp_error = None
+        self.loop_ssh_tunnel = False
+        self.ssh_tunnel_state = {
+            'port': 0,
+            'state': 'Not running',
+            'command': ''
+        }
+        self.pattern_list = [
+            dict(id='__eof__', pattern=pexpect.EOF),
+            dict(id='__timeout__', pattern=pexpect.TIMEOUT),
+            dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
+            dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\r\n')),
+            dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\r\n')),
+            dict(id='ready', pattern=re.compile(b'debug1: Entering interactive session.\r\r\n')),
+            dict(id='not_known', pattern=re.compile(b'ssh: [^:]+: Name or service not known\r\r\n')),
+            dict(id='refused', pattern=re.compile(b'ssh: connect to host [^:]+: Connection refused\r\r\n')),
+            dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\r\n')),
+            dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\r\n')),
+        ]
+        self.patterns = [item['pattern'] for item in self.pattern_list]
 
     def load_conf(self):
         return cm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
@@ -136,6 +157,7 @@ class CampusManagerClient():
             message = 'Loop as been interrupted'
             self.long_polling_loop_running = False
             logger.warning(message)
+            self.close_tunnel()
             sys.exit(1)
 
         signal.signal(signal.SIGINT, exit_handler)
@@ -256,7 +278,45 @@ class CampusManagerClient():
     def establish_tunnel(self):
         public_key = cm_lib.get_ssh_public_key()
         response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
-        cm_lib.start_tunnel(response['command'])
+        self.update_ssh_state('port', response['port'])
+        target = self.conf['URL'].split('://')[-1]
+        self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
+        logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
+        self.process = pexpect.spawn(self.ssh_tunnel_state['command'], timeout=10)
+        self.compiled_patterns = self.process.compile_pattern_list(self.patterns)
+
+    def update_ssh_state(self, key, value):
+        logger.debug('Update ssh state %s : %s' % (key, value))
+        if self.ssh_tunnel_state.get(key) is not None:
+            self.ssh_tunnel_state[key] = value
+        else:
+            logger.warning('Key %s not exists in ssh state dict' % key)
 
     def close_tunnel(self):
-        cm_lib.stop_tunnel()
+        self.loop_ssh_tunnel = False
+        self.process.kill(9)
+
+    def monitoring_tunnel_loop(self):
+        retry_delay = 2
+        logger.debug('Checking ssh tunnel process.')
+
+        if not self.process.isalive():
+            logger.warning('SSH tunnel process ended. Reason: dead')
+            self.update_ssh_state('state', 'Ended')
+            self.establish_tunnel()
+        index = self.process.expect_list(self.compiled_patterns)
+        pattern = self.pattern_list[index]
+        if pattern['id'] == '__eof__':
+            logger.warning('SSH tunnel process ended. Reason: eof')
+            self.update_ssh_state('state', 'Ended')
+            self.establish_tunnel()
+        elif pattern['id'] != '__timeout__':
+            logger.info('Pattern recognized: %s', pattern['id'])
+            self.update_ssh_state('state', pattern['id'])
+            if pattern['id'] in ('not_known', 'refused', 'denied', 'closed'):
+                logger.warning('SSH tunnel connection problem: %s', pattern['id'])
+                retry_delay = 30
+
+        if self.loop_ssh_tunnel:
+            time.sleep(retry_delay)
+            self.monitoring_tunnel_loop()

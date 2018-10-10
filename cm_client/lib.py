@@ -142,22 +142,8 @@ def get_ssh_public_key():
     return public_key
 
 
-def start_tunnel(command):
-    if not command.startswith('ssh'):
-        # TODO: improve the command check to be sure it is what expected: an ssh tunnel
-        raise ValueError('Invalid command received.')
-    if globals().get('_ssh_process'):
-        raise Exception('The SSH tunnel is already running.')
+def prepare_ssh_command(target, port):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
-    command = 'ssh -i "%s" -o "IdentitiesOnly yes"%s' % (ssh_key_path, command[3:])
+    command = 'ssh -i "%s" -o "IdentitiesOnly yes" -nvNT -o "NumberOfPasswordPrompts 0" -o "CheckHostIP no" -o "StrictHostKeyChecking no" -R %s:127.0.0.1:443 skyreach@%s' % (ssh_key_path, port, target)
     logger.info('Running following command to establish SSH tunnel: %s', command)
-    p = subprocess.Popen(command, shell=True)
-    globals()['_ssh_process'] = p
-    # TODO: check that the tunnel is running in background and restart it if it dies
-
-
-def stop_tunnel():
-    p = globals().get('_ssh_process')
-    if p:
-        p.kill()
-        del globals()['_ssh_process']
+    return command
