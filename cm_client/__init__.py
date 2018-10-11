@@ -51,7 +51,8 @@ class CampusManagerClient():
         self.ssh_tunnel_state = {
             'port': 0,
             'state': 'Not running',
-            'command': ''
+            'command': '',
+            'last_tunnel_info': ''
         }
         self.pattern_list = [
             dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
@@ -279,7 +280,7 @@ class CampusManagerClient():
         target = self.conf['URL'].split('://')[-1]
         self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
         logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE)
+        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def update_ssh_state(self, key, value):
         logger.debug('Update ssh state %s : %s' % (key, value))
@@ -299,12 +300,19 @@ class CampusManagerClient():
         logger.debug('Checking ssh tunnel process.')
         return_code = self.process.poll()
         if return_code:
-            logger.warning('SSH tunnel process ended. Reason: %s' % return_code)
-            self.update_ssh_state('state', 'ended')
+            data = return_code
+            try:
+                data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
+            except Exception:
+                logger.warning('Can\'t read stderr of ssh connection')
+            logger.warning('SSH tunnel process error. Return: %s' % data)
+            self.update_ssh_state('state', 'error')
+            self.update_ssh_state('last_tunnel_info', data)
             self.establish_tunnel()
         else:
             # Reading stdout without blocking not exists in standard python
-            self.update_ssh_state('state', 'ready')
+            self.update_ssh_state('state', 'running')
+            self.update_ssh_state('last_tunnel_info', '')
             logger.debug('PSSH tunnel process running')
             # stdout_text = self.process.stdout.readline()
             # print('************************************************')
