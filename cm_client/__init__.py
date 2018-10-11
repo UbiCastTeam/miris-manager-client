@@ -274,7 +274,12 @@ class CampusManagerClient():
         return response
 
     def establish_tunnel(self):
-        public_key = cm_lib.get_ssh_public_key()
+        public_key = ''
+        try:
+            public_key = cm_lib.get_ssh_public_key()
+        except Exception as e:
+            logger.error(e)
+            return e
         response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         self.update_ssh_state('port', response['port'])
         target = self.conf['URL'].split('://')[-1]
