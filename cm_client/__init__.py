@@ -12,8 +12,8 @@ import requests
 import time
 import traceback
 import signal
-import pexpect
 import re
+import subprocess
 from cm_client import lib as cm_lib
 from cm_client import signing
 
@@ -54,8 +54,6 @@ class CampusManagerClient():
             'command': ''
         }
         self.pattern_list = [
-            dict(id='__eof__', pattern=pexpect.EOF),
-            dict(id='__timeout__', pattern=pexpect.TIMEOUT),
             dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
             dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\r\n')),
             dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\r\n')),
@@ -65,7 +63,6 @@ class CampusManagerClient():
             dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\r\n')),
             dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\r\n')),
         ]
-        self.patterns = [item['pattern'] for item in self.pattern_list]
 
     def load_conf(self):
         return cm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
@@ -282,8 +279,7 @@ class CampusManagerClient():
         target = self.conf['URL'].split('://')[-1]
         self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
         logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = pexpect.spawn(self.ssh_tunnel_state['command'], timeout=10)
-        self.compiled_patterns = self.process.compile_pattern_list(self.patterns)
+        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=logger.debug)
 
     def update_ssh_state(self, key, value):
         logger.debug('Update ssh state %s : %s' % (key, value))
@@ -293,30 +289,33 @@ class CampusManagerClient():
             logger.warning('Key %s not exists in ssh state dict' % key)
 
     def close_tunnel(self):
+        logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
-        self.process.kill(9)
+        self.process.kill()
+        logger.warning('SSH tunnel killed')
 
     def monitoring_tunnel_loop(self):
-        retry_delay = 2
+        check_delay = 10
         logger.debug('Checking ssh tunnel process.')
-
-        if not self.process.isalive():
-            logger.warning('SSH tunnel process ended. Reason: dead')
-            self.update_ssh_state('state', 'Ended')
+        return_code = self.process.poll()
+        if return_code:
+            logger.warning('SSH tunnel process ended. Reason: %s' % return_code)
+            self.update_ssh_state('state', 'ended')
             self.establish_tunnel()
-        index = self.process.expect_list(self.compiled_patterns)
-        pattern = self.pattern_list[index]
-        if pattern['id'] == '__eof__':
-            logger.warning('SSH tunnel process ended. Reason: eof')
-            self.update_ssh_state('state', 'Ended')
-            self.establish_tunnel()
-        elif pattern['id'] != '__timeout__':
-            logger.info('Pattern recognized: %s', pattern['id'])
-            self.update_ssh_state('state', pattern['id'])
-            if pattern['id'] in ('not_known', 'refused', 'denied', 'closed'):
-                logger.warning('SSH tunnel connection problem: %s', pattern['id'])
-                retry_delay = 30
+        else:
+            # Reading stdout without blocking not exists in standard python
+            self.update_ssh_state('state', 'ready')
+            logger.debug('PSSH tunnel process running')
+            # stdout_text = self.process.stdout.readline()
+            # print('************************************************')
+            # print(stdout_text)
+            # pattern_id = 'test'
+            # logger.info('Pattern recognized: %s', pattern_id)
+            # self.update_ssh_state('state', pattern_id)
+            # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
+                # logger.warning('SSH tunnel connection problem: %s', pattern_id)
+                # check_delay = 30
 
+        time.sleep(check_delay)
         if self.loop_ssh_tunnel:
-            time.sleep(retry_delay)
             self.monitoring_tunnel_loop()

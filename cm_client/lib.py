@@ -144,6 +144,6 @@ def get_ssh_public_key():
 
 def prepare_ssh_command(target, port):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
-    command = 'ssh -i "%s" -o "IdentitiesOnly yes" -nvNT -o "NumberOfPasswordPrompts 0" -o "CheckHostIP no" -o "StrictHostKeyChecking no" -R %s:127.0.0.1:443 skyreach@%s' % (ssh_key_path, port, target)
+    command = ['ssh', '-i', ssh_key_path, '-o', 'IdentitiesOnly yes', '-nvNT', '-o', 'NumberOfPasswordPrompts 0', '-o' 'CheckHostIP no', '-o', 'StrictHostKeyChecking no', '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
     logger.info('Running following command to establish SSH tunnel: %s', command)
     return command
