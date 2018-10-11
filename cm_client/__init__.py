@@ -279,7 +279,7 @@ class CampusManagerClient():
         target = self.conf['URL'].split('://')[-1]
         self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
         logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=logger.debug)
+        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE)
 
     def update_ssh_state(self, key, value):
         logger.debug('Update ssh state %s : %s' % (key, value))
