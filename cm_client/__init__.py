@@ -280,7 +280,13 @@ class CampusManagerClient():
         except Exception as e:
             logger.error(e)
             return e
-        response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
+
+        response = {}
+        try:
+            response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
+        except Exception as e:
+            logger.error(e)
+            return e
         self.update_ssh_state('port', response['port'])
         target = self.conf['URL'].split('://')[-1]
         self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
