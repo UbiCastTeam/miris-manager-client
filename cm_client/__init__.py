@@ -274,19 +274,8 @@ class CampusManagerClient():
         return response
 
     def establish_tunnel(self):
-        public_key = ''
-        try:
-            public_key = cm_lib.get_ssh_public_key()
-        except Exception as e:
-            logger.error(e)
-            return e
-
-        response = {}
-        try:
-            response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
-        except Exception as e:
-            logger.error(e)
-            return e
+        public_key = cm_lib.get_ssh_public_key()
+        response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         self.update_ssh_state('port', response['port'])
         target = self.conf['URL'].split('://')[-1]
         self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
@@ -319,7 +308,10 @@ class CampusManagerClient():
             logger.warning('SSH tunnel process error. Return: %s' % data)
             self.update_ssh_state('state', 'error')
             self.update_ssh_state('last_tunnel_info', data)
-            self.establish_tunnel()
+            try:
+                self.establish_tunnel()
+            except Exception as e:
+                logger.error(e)
         else:
             # Reading stdout without blocking not exists in standard python
             self.update_ssh_state('state', 'running')
