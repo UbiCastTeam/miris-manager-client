@@ -93,7 +93,7 @@ def get_host_info(cm_url):
     mac = ':'.join(('%012x' % node)[i:i + 2] for i in range(0, 12, 2))
     logger.info('Client mac address is: %s.', mac)
     return dict(
-        alt_hostname=hostname,
+        hostname=hostname,
         local_ip=local_ip,
         mac=mac,
     )
