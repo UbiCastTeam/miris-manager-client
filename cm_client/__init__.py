@@ -48,6 +48,7 @@ class CampusManagerClient():
         self.run_systemd_notify = False
         self.last_lp_error = None
         self.loop_ssh_tunnel = False
+        self.process = None
         self.ssh_tunnel_state = {
             'port': 0,
             'state': 'Not running',
@@ -105,16 +106,19 @@ class CampusManagerClient():
         self.update_conf('SECRET_KEY', secret_key)
         self.update_conf('API_KEY', api_key)
         logger.info('System registration done.')
+        return True
 
-    def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):
+    def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None, auto_registration=False):
         url_info = self.get_url_info(url_or_action)
         if anonymous is None:
             anonymous = bool(url_info.get('anonymous'))
         if anonymous:
             _headers = headers
         else:
-            # Register system if no API key
+            # Register system if no API key and auto_registration
             if not self.conf.get('API_KEY'):
+                if not auto_registration:
+                    raise Exception('You are not registred, you have any API_KEY in conf file')
                 try:
                     self._register()
                 except Exception as e:
@@ -172,7 +176,7 @@ class CampusManagerClient():
     def call_long_polling(self):
         success = False
         try:
-            response = self.api_request('LONG_POLLING', timeout=300)
+            response = self.api_request('LONG_POLLING', timeout=300, auto_registration=True)
         except Exception as e:
             if 'timeout=300' not in str(e):
                 msg = 'Long polling connection failed: %s: %s' % (e.__class__.__name__, e)
@@ -284,7 +288,6 @@ class CampusManagerClient():
         self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def update_ssh_state(self, key, value):
-        logger.debug('Update ssh state %s : %s' % (key, value))
         if self.ssh_tunnel_state.get(key) is not None:
             self.ssh_tunnel_state[key] = value
         else:
@@ -293,40 +296,47 @@ class CampusManagerClient():
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
-        self.process.kill()
+        if self.process:
+            self.process.kill()
         logger.warning('SSH tunnel killed')
 
     def monitoring_tunnel_loop(self):
         check_delay = 10
         logger.debug('Checking ssh tunnel process.')
-        return_code = self.process.poll()
-        if return_code:
-            data = return_code
-            try:
-                data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
-            except Exception:
-                logger.warning('Can\'t read stderr of ssh connection')
-            logger.warning('SSH tunnel process error. Return: %s' % data)
-            self.update_ssh_state('state', 'error')
-            self.update_ssh_state('last_tunnel_info', data)
+        if self.process:
+            return_code = self.process.poll()
+            if return_code is not None:
+                data = return_code
+                try:
+                    data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
+                except Exception:
+                    logger.warning('Can\'t read stderr of ssh connection')
+                logger.warning('SSH tunnel process error. Return: %s' % data)
+                self.update_ssh_state('state', 'error')
+                self.update_ssh_state('last_tunnel_info', data)
+                try:
+                    self.establish_tunnel()
+                except Exception as e:
+                    logger.error(e)
+            else:
+                # Reading stdout without blocking not exists in standard python
+                self.update_ssh_state('state', 'running')
+                self.update_ssh_state('last_tunnel_info', '')
+                logger.debug('SSH tunnel process running')
+                # stdout_text = self.process.stdout.readline()
+                # print('************************************************')
+                # print(stdout_text)
+                # pattern_id = 'test'
+                # logger.info('Pattern recognized: %s', pattern_id)
+                # self.update_ssh_state('state', pattern_id)
+                # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
+                    # logger.warning('SSH tunnel connection problem: %s', pattern_id)
+                    # check_delay = 30
+        else:
             try:
                 self.establish_tunnel()
             except Exception as e:
                 logger.error(e)
-        else:
-            # Reading stdout without blocking not exists in standard python
-            self.update_ssh_state('state', 'running')
-            self.update_ssh_state('last_tunnel_info', '')
-            logger.debug('PSSH tunnel process running')
-            # stdout_text = self.process.stdout.readline()
-            # print('************************************************')
-            # print(stdout_text)
-            # pattern_id = 'test'
-            # logger.info('Pattern recognized: %s', pattern_id)
-            # self.update_ssh_state('state', pattern_id)
-            # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
-                # logger.warning('SSH tunnel connection problem: %s', pattern_id)
-                # check_delay = 30
 
         time.sleep(check_delay)
         if self.loop_ssh_tunnel:
