@@ -90,17 +90,17 @@ class CampusManagerClient():
         logger.info('System registration done.')
         return True
 
-    def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None, auto_registration=False):
+    def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):
         url_info = self.get_url_info(url_or_action)
         if anonymous is None:
             anonymous = bool(url_info.get('anonymous'))
         if anonymous:
             _headers = headers
         else:
-            # Register system if no API key and auto_registration
+            # Register system if no API key and auto registration
             if not self.conf.get('API_KEY'):
-                if not auto_registration:
-                    raise Exception('You are not registred, no API_KEY is set in conf file')
+                if not self.conf['AUTO_REGISTRATION']:
+                    raise Exception('The client auto registration is disabled and no API_KEY is set in conf file, please set one or turn on auto registration.')
                 try:
                     self._register()
                 except Exception as e:

@@ -15,6 +15,9 @@
     // Secret key of this system in Campus Manager, used to sign messages
     "SECRET_KEY": "",
 
+    // Try to register this system if no API_KEY is defined
+    "AUTO_REGISTRATION": true,
+
     // Notify systemd watchdog after each long polling call
     "WATCHDOG": false,
 
