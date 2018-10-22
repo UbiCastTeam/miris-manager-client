@@ -118,7 +118,7 @@ class CampusManagerClient():
             # Register system if no API key and auto_registration
             if not self.conf.get('API_KEY'):
                 if not auto_registration:
-                    raise Exception('You are not registred, you have any API_KEY in conf file')
+                    raise Exception('You are not registred, no API_KEY is set in conf file')
                 try:
                     self._register()
                 except Exception as e:
