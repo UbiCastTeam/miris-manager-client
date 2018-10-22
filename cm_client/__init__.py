@@ -12,10 +12,9 @@ import requests
 import time
 import traceback
 import signal
-import re
-import subprocess
 from cm_client import lib as cm_lib
 from cm_client import signing
+from cm_client.ssh_tunnel import SSHTunnelManager
 
 __version__ = '3.0'
 logger = logging.getLogger('cm_client')
@@ -47,24 +46,7 @@ class CampusManagerClient():
             logger.debug('Logging conf set.')
         self.run_systemd_notify = False
         self.last_lp_error = None
-        self.loop_ssh_tunnel = False
-        self.process = None
-        self.ssh_tunnel_state = {
-            'port': 0,
-            'state': 'Not running',
-            'command': '',
-            'last_tunnel_info': ''
-        }
-        self.pattern_list = [
-            dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
-            dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\r\n')),
-            dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\r\n')),
-            dict(id='ready', pattern=re.compile(b'debug1: Entering interactive session.\r\r\n')),
-            dict(id='not_known', pattern=re.compile(b'ssh: [^:]+: Name or service not known\r\r\n')),
-            dict(id='refused', pattern=re.compile(b'ssh: connect to host [^:]+: Connection refused\r\r\n')),
-            dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\r\n')),
-            dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\r\n')),
-        ]
+        self.ssh_tunnel_manager = None
 
     def load_conf(self):
         return cm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
@@ -278,66 +260,11 @@ class CampusManagerClient():
             ))
         return response
 
-    def establish_tunnel(self):
-        public_key = cm_lib.get_ssh_public_key()
-        response = self.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
-        self.update_ssh_state('port', response['port'])
-        target = self.conf['URL'].split('://')[-1]
-        self.update_ssh_state('command', cm_lib.prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-        logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    def update_ssh_state(self, key, value):
-        if self.ssh_tunnel_state.get(key) is not None:
-            self.ssh_tunnel_state[key] = value
-        else:
-            logger.warning('Key %s not exists in ssh state dict' % key)
+    def open_tunnel(self):
+        if not self.ssh_tunnel_manager:
+            self.ssh_tunnel_manager = SSHTunnelManager(self)
+        self.ssh_tunnel_manager.tunnel_loop()
 
     def close_tunnel(self):
-        logger.warning('Close ssh tunnel asked')
-        self.loop_ssh_tunnel = False
-        if self.process:
-            self.process.kill()
-        logger.warning('SSH tunnel killed')
-
-    def monitoring_tunnel_loop(self):
-        check_delay = 10
-        logger.debug('Checking ssh tunnel process.')
-        if self.process:
-            return_code = self.process.poll()
-            if return_code is not None:
-                data = return_code
-                try:
-                    data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
-                except Exception:
-                    logger.warning('Can\'t read stderr of ssh connection')
-                logger.warning('SSH tunnel process error. Return: %s' % data)
-                self.update_ssh_state('state', 'error')
-                self.update_ssh_state('last_tunnel_info', data)
-                try:
-                    self.establish_tunnel()
-                except Exception as e:
-                    logger.error(e)
-            else:
-                # Reading stdout without blocking not exists in standard python
-                self.update_ssh_state('state', 'running')
-                self.update_ssh_state('last_tunnel_info', '')
-                logger.debug('SSH tunnel process running')
-                # stdout_text = self.process.stdout.readline()
-                # print('************************************************')
-                # print(stdout_text)
-                # pattern_id = 'test'
-                # logger.info('Pattern recognized: %s', pattern_id)
-                # self.update_ssh_state('state', pattern_id)
-                # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
-                    # logger.warning('SSH tunnel connection problem: %s', pattern_id)
-                    # check_delay = 30
-        else:
-            try:
-                self.establish_tunnel()
-            except Exception as e:
-                logger.error(e)
-
-        time.sleep(check_delay)
-        if self.loop_ssh_tunnel:
-            self.monitoring_tunnel_loop()
+        if self.ssh_tunnel_manager:
+            self.ssh_tunnel_manager.close_tunnel()

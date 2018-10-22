@@ -116,34 +116,3 @@ def get_remaining_space():
                 except ValueError:
                     pass
     return remaining_space
-
-
-def get_ssh_public_key():
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
-    ssh_dir = os.path.dirname(ssh_key_path)
-    if not os.path.exists(ssh_dir):
-        os.makedirs(ssh_dir)
-        os.chmod(ssh_dir, 0o700)
-    if os.path.exists(ssh_key_path):
-        if not os.path.exists(ssh_key_path + '.pub'):
-            raise Exception('Weird state detetected: "%s" exists but not "%s" !' % (ssh_key_path, ssh_key_path + '.pub'))
-        logger.info('Using existing SSH key: "%s".', ssh_key_path)
-    else:
-        logger.info('Creating new SSH key: "%s".', ssh_key_path)
-        p = subprocess.Popen(['ssh-keygen', '-b', '4096', '-f', ssh_key_path, '-N', ''], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p.communicate(input=b'\n\n\n')
-        if p.returncode != 0:
-            out = p.stdout.decode('utf-8') + '\n' + p.stderr.decode('utf-8')
-            raise Exception('Failed to generate SSH key:\n%s' % out)
-        os.chmod(ssh_key_path, 0o600)
-        os.chmod(ssh_key_path + '.pub', 0o600)
-    with open(ssh_key_path + '.pub', 'r') as fo:
-        public_key = fo.read()
-    return public_key
-
-
-def prepare_ssh_command(target, port):
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
-    command = ['ssh', '-i', ssh_key_path, '-o', 'IdentitiesOnly yes', '-nvNT', '-o', 'NumberOfPasswordPrompts 0', '-o' 'CheckHostIP no', '-o', 'StrictHostKeyChecking no', '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
-    logger.info('Running following command to establish SSH tunnel: %s', command)
-    return command
