@@ -188,9 +188,9 @@ class CampusManagerClient():
             ))
         return response
 
-    def open_tunnel(self):
+    def open_tunnel(self, status_callback=None):
         if not self._ssh_tunnel_manager:
-            self._ssh_tunnel_manager = SSHTunnelManager(self)
+            self._ssh_tunnel_manager = SSHTunnelManager(self, status_callback)
         self._ssh_tunnel_manager.tunnel_loop()
 
     def close_tunnel(self):

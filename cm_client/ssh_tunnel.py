@@ -46,8 +46,9 @@ def prepare_ssh_command(target, port):
 
 class SSHTunnelManager():
 
-    def __init__(self, client):
+    def __init__(self, client, status_callback=None):
         self.client = client
+        self.status_callback = status_callback
         '''
         self.pattern_list = [
             dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
@@ -83,6 +84,8 @@ class SSHTunnelManager():
             self.ssh_tunnel_state[key] = value
         else:
             logger.warning('Key %s not exists in ssh state dict' % key)
+        if self.status_callback:
+            self.status_callback(key)
 
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
