@@ -96,42 +96,41 @@ class SSHTunnelManager():
 
     def tunnel_loop(self):
         check_delay = 10
-        logger.debug('Checking ssh tunnel process.')
-        if self.process:
-            return_code = self.process.poll()
-            if return_code is not None:
-                data = return_code
-                try:
-                    data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
-                except Exception:
-                    logger.warning('Can\'t read stderr of ssh connection')
-                logger.error('SSH tunnel process error. Return: %s' % data)
-                self.update_ssh_state('state', 'error')
-                self.update_ssh_state('last_tunnel_info', data)
+        while self.loop_ssh_tunnel:
+            logger.debug('Checking ssh tunnel process.')
+            if self.process:
+                return_code = self.process.poll()
+                if return_code is not None:
+                    data = return_code
+                    try:
+                        data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
+                    except Exception:
+                        logger.warning('Can\'t read stderr of ssh connection')
+                    logger.error('SSH tunnel process error. Return: %s' % data)
+                    self.update_ssh_state('state', 'error')
+                    self.update_ssh_state('last_tunnel_info', data)
+                    try:
+                        self.establish_tunnel()
+                    except Exception as e:
+                        logger.error(e)
+                else:
+                    # Reading stdout without blocking not exists in standard python
+                    self.update_ssh_state('state', 'running')
+                    self.update_ssh_state('last_tunnel_info', '')
+                    logger.debug('SSH tunnel process running')
+                    # stdout_text = self.process.stdout.readline()
+                    # print('************************************************')
+                    # print(stdout_text)
+                    # pattern_id = 'test'
+                    # logger.info('Pattern recognized: %s', pattern_id)
+                    # self.update_ssh_state('state', pattern_id)
+                    # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
+                    #     logger.warning('SSH tunnel connection problem: %s', pattern_id)
+                    #     check_delay = 30
+            else:
                 try:
                     self.establish_tunnel()
                 except Exception as e:
                     logger.error(e)
-            else:
-                # Reading stdout without blocking not exists in standard python
-                self.update_ssh_state('state', 'running')
-                self.update_ssh_state('last_tunnel_info', '')
-                logger.debug('SSH tunnel process running')
-                # stdout_text = self.process.stdout.readline()
-                # print('************************************************')
-                # print(stdout_text)
-                # pattern_id = 'test'
-                # logger.info('Pattern recognized: %s', pattern_id)
-                # self.update_ssh_state('state', pattern_id)
-                # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
-                #     logger.warning('SSH tunnel connection problem: %s', pattern_id)
-                #     check_delay = 30
-        else:
-            try:
-                self.establish_tunnel()
-            except Exception as e:
-                logger.error(e)
 
-        time.sleep(check_delay)
-        if self.loop_ssh_tunnel:
-            self.tunnel_loop()
+            time.sleep(check_delay)
