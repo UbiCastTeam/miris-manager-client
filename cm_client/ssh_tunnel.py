@@ -61,7 +61,7 @@ class SSHTunnelManager():
             dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\r\n')),
         ]
         '''
-        self.loop_ssh_tunnel = False
+        self.loop_ssh_tunnel = True
         self.process = None
         self.ssh_tunnel_state = {
             'port': 0,
@@ -85,7 +85,7 @@ class SSHTunnelManager():
         else:
             logger.warning('Key %s not exists in ssh state dict' % key)
         if self.status_callback:
-            self.status_callback(key)
+            self.status_callback(self.ssh_tunnel_state)
 
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
@@ -105,7 +105,7 @@ class SSHTunnelManager():
                     data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
                 except Exception:
                     logger.warning('Can\'t read stderr of ssh connection')
-                logger.warning('SSH tunnel process error. Return: %s' % data)
+                logger.error('SSH tunnel process error. Return: %s' % data)
                 self.update_ssh_state('state', 'error')
                 self.update_ssh_state('last_tunnel_info', data)
                 try:

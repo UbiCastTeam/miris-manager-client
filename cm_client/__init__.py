@@ -60,7 +60,7 @@ class CampusManagerClient():
     def _register(self):
         if self.conf.get('API_KEY'):
             return
-        logger.info('No API key in configuration %s, requesting system registration...' % self.LOCAL_CONF)
+        logger.debug('No API key in configuration %s, requesting system registration...' % self.LOCAL_CONF)
         data = cm_lib.get_host_info(self.conf['URL'])
         data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
         req = requests.post(
@@ -82,7 +82,7 @@ class CampusManagerClient():
             raise Exception('No API key received.')
         self.update_conf('SECRET_KEY', secret_key)
         self.update_conf('API_KEY', api_key)
-        logger.info('System registration done.')
+        logger.debug('System registration done.')
         return True
 
     def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):

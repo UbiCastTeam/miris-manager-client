@@ -38,14 +38,14 @@ def load_conf(default_conf=None, local_conf=None):
                 content = re.sub(r'\n\s*//.*', '\n', content)  # remove comments
                 conf_mod = json.loads(content) if content else None
                 if not conf_mod:
-                    logger.info('Config file "%s" is empty.', conf_override)
+                    logger.debug('Config file "%s" is empty.', conf_override)
                 else:
-                    logger.info('Config file "%s" loaded.', conf_override)
+                    logger.debug('Config file "%s" loaded.', conf_override)
                     if not isinstance(conf_mod, dict):
                         raise ValueError('The configuration in "%s" is not a dict.' % conf_override)
                     conf.update(conf_mod)
             else:
-                logger.info('Config file does not exists, using default config.')
+                logger.debug('Config file does not exists, using default config.')
         else:
             raise ValueError('Unsupported type for configuration.')
     if conf['URL'].endswith('/'):
@@ -67,13 +67,13 @@ def update_conf(local_conf, key, value):
     new_content = json.dumps(data, sort_keys=True, indent=4)
     with open(local_conf, 'w') as fo:
         fo.write(new_content)
-    logger.info('Configuration file "%s" updated: "%s" set to "%s".', local_conf, key, value)
+    logger.debug('Configuration file "%s" updated: "%s" set to "%s".', local_conf, key, value)
 
 
 def get_host_info(cm_url):
     # get hostname
     hostname = socket.gethostname()
-    logger.info('Hostname is %s.', hostname)
+    logger.debug('Hostname is %s.', hostname)
     # get local IP address
     cm_host = cm_url.split('://')[-1]
     if ':' in cm_host:
@@ -87,11 +87,11 @@ def get_host_info(cm_url):
     s.connect((cm_host, cm_port))
     local_ip = s.getsockname()[0]
     s.close()
-    logger.info('Local IP is %s.', local_ip)
+    logger.debug('Local IP is %s.', local_ip)
     # get MAC address
     node = uuid.getnode()
     mac = ':'.join(('%012x' % node)[i:i + 2] for i in range(0, 12, 2))
-    logger.info('Client mac address is: %s.', mac)
+    logger.debug('Client mac address is: %s.', mac)
     return dict(
         hostname=hostname,
         local_ip=local_ip,
