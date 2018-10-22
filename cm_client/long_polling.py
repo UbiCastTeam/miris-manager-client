@@ -34,10 +34,8 @@ class LongPollingManager():
         self.loop_running = True
 
         def exit_handler(signum, frame):
-            message = 'Loop as been interrupted'
             self.loop_running = False
-            logger.warning(message)
-            self.close_tunnel()
+            logger.warning('Loop as been interrupted')
             sys.exit(1)
 
         signal.signal(signal.SIGINT, exit_handler)
