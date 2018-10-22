@@ -3,17 +3,13 @@
 '''
 Campus Manager client class
 '''
-import datetime
 import json
 import logging
 import os
-import sys
 import requests
-import time
-import traceback
-import signal
 from cm_client import lib as cm_lib
 from cm_client import signing
+from cm_client.long_polling import LongPollingManager
 from cm_client.ssh_tunnel import SSHTunnelManager
 
 __version__ = '3.0'
@@ -44,9 +40,8 @@ class CampusManagerClient():
             urllib3_logger.setLevel(logging.WARNING)
             requests.packages.urllib3.disable_warnings()
             logger.debug('Logging conf set.')
-        self.run_systemd_notify = False
-        self.last_lp_error = None
-        self.ssh_tunnel_manager = None
+        self._long_polling_manager = None
+        self._ssh_tunnel_manager = None
 
     def load_conf(self):
         return cm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
@@ -129,80 +124,13 @@ class CampusManagerClient():
         return response
 
     def long_polling_loop(self):
-        # Check if systemd-notify should be called
-        self.run_systemd_notify = self.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
-        # Start connection loop
-        logger.info('Campus Manager server is %s.', self.conf['URL'])
-        logger.info('Starting connection loop using url: %s.', self.get_url_info('LONG_POLLING'))
-        self.long_polling_loop_running = True
-
-        def exit_handler(signum, frame):
-            message = 'Loop as been interrupted'
-            self.long_polling_loop_running = False
-            logger.warning(message)
-            self.close_tunnel()
-            sys.exit(1)
-
-        signal.signal(signal.SIGINT, exit_handler)
-        signal.signal(signal.SIGTERM, exit_handler)
-
-        while self.long_polling_loop_running:
-            start = datetime.datetime.utcnow()
-            success = self.call_long_polling()
-            if not success:
-                # Avoid starting too often new connections
-                duration = (datetime.datetime.utcnow() - start).seconds
-                if duration < 5:
-                    time.sleep(5 - duration)
-
-    def call_long_polling(self):
-        success = False
-        try:
-            response = self.api_request('LONG_POLLING', timeout=300)
-        except Exception as e:
-            if 'timeout=300' not in str(e):
-                msg = 'Long polling connection failed: %s: %s' % (e.__class__.__name__, e)
-                if self.last_lp_error == e.__class__.__name__:
-                    logger.debug(msg)  # Avoid spamming
-                else:
-                    logger.info(msg)
-                    self.last_lp_error = e.__class__.__name__
-        else:
-            self.last_lp_error = None
-            if response:
-                logger.info('Received long polling response: %s', response)
-                success = True
-                uid = response.get('uid')
-                try:
-                    result = self.process_long_polling(response)
-                except Exception as e:
-                    logger.error('Failed to process response: %s\n%s', e, traceback.format_exc())
-                    self.set_command_status(uid, 'FAILED', str(e))
-                else:
-                    self.set_command_status(uid, 'DONE', result)
-        finally:
-            if self.run_systemd_notify:
-                logger.debug('Notifying systemd watchdog.')
-                os.system('systemd-notify WATCHDOG=1')
-        return success
-
-    def process_long_polling(self, response):
-        logger.debug('Processing response.')
-        if self.conf.get('API_KEY'):
-            invalid = signing.check_signature(self, response)
-            if invalid:
-                raise Exception('Invalid signature: %s' % invalid)
-        action = response.get('action')
-        if not action:
-            raise Exception('No action received.')
-        params = response.get('params', dict())
-        logger.debug('Received command "%s": %s.', response.get('uid'), action)
-        if action == 'PING':
-            pass
-        else:
-            return self.handle_action(action, params)
+        if not self._long_polling_manager:
+            self._long_polling_manager = LongPollingManager(self)
+        self._long_polling_manager.loop()
 
     def handle_action(self, action, params):
+        # Function that should be implemented in your client to process the
+        # long polling responses.
         # IMPORTANT: Any code written here should not be blocking more than 5s
         # because of the delay after which the system is considered as offline
         # in Campus Manager.
@@ -261,10 +189,10 @@ class CampusManagerClient():
         return response
 
     def open_tunnel(self):
-        if not self.ssh_tunnel_manager:
-            self.ssh_tunnel_manager = SSHTunnelManager(self)
-        self.ssh_tunnel_manager.tunnel_loop()
+        if not self._ssh_tunnel_manager:
+            self._ssh_tunnel_manager = SSHTunnelManager(self)
+        self._ssh_tunnel_manager.tunnel_loop()
 
     def close_tunnel(self):
-        if self.ssh_tunnel_manager:
-            self.ssh_tunnel_manager.close_tunnel()
+        if self._ssh_tunnel_manager:
+            self._ssh_tunnel_manager.close_tunnel()
