@@ -158,7 +158,7 @@ class CampusManagerClient():
     def call_long_polling(self):
         success = False
         try:
-            response = self.api_request('LONG_POLLING', timeout=300, auto_registration=True)
+            response = self.api_request('LONG_POLLING', timeout=300)
         except Exception as e:
             if 'timeout=300' not in str(e):
                 msg = 'Long polling connection failed: %s: %s' % (e.__class__.__name__, e)
