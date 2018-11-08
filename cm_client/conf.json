@@ -50,6 +50,7 @@
         "ADD_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/add/"},
         "ARCHIVE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/archive/"},
         "DELETE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/delete/"},
-        "PREPARE_TUNNEL": {"method": "post", "url": "/api/v3/fleet/proxy/prepare-tunnel/"}
+        "PREPARE_TUNNEL": {"method": "post", "url": "/api/v3/fleet/proxy/prepare-tunnel/"},
+        "CHECK_TOKEN": {"method": "post", "url": "/api/v3/registration/check-token/"}
     }
 }
