@@ -3,7 +3,7 @@
 A Python3 client to use UbiCast Campus Manager remote control.
 
 This client is intended to act as a system in Campus Manager so it allows you to integrate a device in Campus Manager in order to control it.
-For now it this client is not handling user API keys.
+For now this client can not handle user API keys.
 
 Here is the list of actions that can be sent to the client depending on its supported capabilities:
 
