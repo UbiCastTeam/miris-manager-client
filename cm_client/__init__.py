@@ -162,7 +162,7 @@ class CampusManagerClient():
         response = self.api_request('SET_INFO', data=data)
         return response
 
-    def set_status(self, status=None, status_info=None, status_message=None, remaining_space=None, remaining_time=None):
+    def set_status(self, status=None, status_info=None, status_message=None, profile=None, remaining_space=None, remaining_time=None):
         data = dict()
         if status is not None:
             data['status'] = status
@@ -170,6 +170,8 @@ class CampusManagerClient():
             data['status_info'] = status_info
         if status_message is not None:
             data['status_message'] = status_message
+        if profile is not None:
+            data['profile'] = profile
         if remaining_space == 'auto':
             remaining_space = cm_lib.get_remaining_space()
         if remaining_space is not None:
