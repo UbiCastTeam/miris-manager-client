@@ -85,6 +85,8 @@ def get_host_info(cm_url):
     else:
         cm_port = 443
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    if cm_host.endswith('/'):
+        cm_host = cm_host[:-1]
     s.connect((cm_host, cm_port))
     local_ip = s.getsockname()[0]
     s.close()
