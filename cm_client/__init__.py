@@ -63,8 +63,6 @@ class CampusManagerClient():
         logger.debug('No API key in configuration %s, requesting system registration...' % self.LOCAL_CONF)
         data = cm_lib.get_host_info(self.conf['URL'])
         data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
-        if self.conf.get('LOCATION'):
-            data['location'] = self.conf.get('LOCATION')
         req = requests.post(
             url=self.conf['URL'] + self.get_url_info('REGISTER_SYSTEM')['url'],
             data=data,
