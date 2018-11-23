@@ -75,6 +75,7 @@ def get_host_info(cm_url):
     hostname = socket.gethostname()
     logger.debug('Hostname is %s.', hostname)
     # get local IP address
+    logger.debug('check local ip of cm %s' % cm_url)
     cm_host = cm_url.split('://')[-1]
     if ':' in cm_host:
         cm_host, cm_port = cm_host.split(':')
