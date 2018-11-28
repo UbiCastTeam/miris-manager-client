@@ -9,6 +9,8 @@ import logging
 import os
 import subprocess
 import time
+import multiprocessing
+import re
 
 logger = logging.getLogger('cm_client.ssh_tunnel')
 
@@ -49,20 +51,21 @@ class SSHTunnelManager():
     def __init__(self, client, status_callback=None):
         self.client = client
         self.status_callback = status_callback
-        '''
         self.pattern_list = [
-            dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\r\n')),
-            dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\r\n')),
-            dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\r\n')),
-            dict(id='ready', pattern=re.compile(b'debug1: Entering interactive session.\r\r\n')),
-            dict(id='not_known', pattern=re.compile(b'ssh: [^:]+: Name or service not known\r\r\n')),
-            dict(id='refused', pattern=re.compile(b'ssh: connect to host [^:]+: Connection refused\r\r\n')),
-            dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\r\n')),
-            dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\r\n')),
+            dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n')),
+            dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\n')),
+            dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n')),
+            dict(id='running', pattern=re.compile(b'debug1: Entering interactive session.\r\n')),
+            dict(id='not_known', pattern=re.compile(b'ssh: [^:]+: Name or service not known\r\n')),
+            dict(id='refused', pattern=re.compile(b'ssh: connect to host [^:]+: Connection refused\r\n')),
+            dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\n')),
+            dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
         ]
-        '''
         self.loop_ssh_tunnel = True
         self.process = None
+        self.stdout_queue = None
+        self.stdout_reader = None
+        self.stderr_reader = None
         self.ssh_tunnel_state = {
             'port': 0,
             'state': 'Not running',
@@ -75,9 +78,16 @@ class SSHTunnelManager():
         response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         self.update_ssh_state('port', response['port'])
         target = self.client.conf['URL'].split('://')[-1]
+        if target.endswith('/'):
+            target = target[:-1]
         self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
         logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
         self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.stdout_queue = multiprocessing.Queue()
+        self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
+        self.stdout_reader.start()
+        self.stderr_reader = AsynchronousFileReader(self.process.stderr, self.stdout_queue)
+        self.stderr_reader.start()
 
     def update_ssh_state(self, key, value):
         if self.ssh_tunnel_state.get(key) is not None:
@@ -90,9 +100,17 @@ class SSHTunnelManager():
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
+        if self.stdout_reader:
+            self.stdout_reader.terminate()
+        if self.stderr_reader:
+            self.stderr_reader.terminate()
+        if self.stdout_queue:
+            self.stdout_queue.close()
+            logger.warning('ssh queue killed')
         if self.process:
+            logger.debug('Wait for ssh process')
             self.process.kill()
-        logger.warning('SSH tunnel killed')
+            logger.warning('SSH tunnel killed')
 
     def tunnel_loop(self):
         check_delay = 10
@@ -101,32 +119,23 @@ class SSHTunnelManager():
             if self.process:
                 return_code = self.process.poll()
                 if return_code is not None:
-                    data = return_code
-                    try:
-                        data = self.process.stderr.read().decode('utf-8').split('\r\n')[-2]
-                    except Exception:
-                        logger.warning('Can\'t read stderr of ssh connection')
-                    logger.error('SSH tunnel process error. Return: %s' % data)
+                    ssh_logs = ''
+                    while not self.stdout_queue.empty():
+                        ssh_logs += self.stdout_queue.get_nowait().decode('utf-8')
+                    logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
                     self.update_ssh_state('state', 'error')
-                    self.update_ssh_state('last_tunnel_info', data)
+                    self.update_ssh_state('last_tunnel_info', ssh_logs)
                     try:
                         self.establish_tunnel()
                     except Exception as e:
                         logger.error(e)
                 else:
-                    # Reading stdout without blocking not exists in standard python
-                    self.update_ssh_state('state', 'running')
-                    self.update_ssh_state('last_tunnel_info', '')
-                    logger.debug('SSH tunnel process running')
-                    # stdout_text = self.process.stdout.readline()
-                    # print('************************************************')
-                    # print(stdout_text)
-                    # pattern_id = 'test'
-                    # logger.info('Pattern recognized: %s', pattern_id)
-                    # self.update_ssh_state('state', pattern_id)
-                    # if pattern_id in ('not_known', 'refused', 'denied', 'closed'):
-                    #     logger.warning('SSH tunnel connection problem: %s', pattern_id)
-                    #     check_delay = 30
+                    while not self.stdout_queue.empty():
+                        ssh_stdout = self.stdout_queue.get_nowait()
+                        for pattern_dict in self.pattern_list:
+                            if pattern_dict['pattern'].match(ssh_stdout):
+                                self.update_ssh_state('state', pattern_dict['id'])
+                                self.update_ssh_state('last_tunnel_info', ssh_stdout.decode('utf-8'))
             else:
                 try:
                     self.establish_tunnel()
@@ -134,3 +143,21 @@ class SSHTunnelManager():
                     logger.error(e)
 
             time.sleep(check_delay)
+
+
+class AsynchronousFileReader(multiprocessing.Process):
+    def __init__(self, fd, data_queue):
+        multiprocessing.Process.__init__(self)
+        self._fd = fd
+        self._queue = data_queue
+
+    def run(self):
+        while self.is_alive():
+            line = self._fd.readline()
+            if line:
+                self._queue.put(line)
+            else:
+                time.sleep(0.5)
+
+    def eof(self):
+        return not self.is_alive() and self._queue.empty()
