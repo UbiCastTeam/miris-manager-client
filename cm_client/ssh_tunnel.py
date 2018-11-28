@@ -52,14 +52,14 @@ class SSHTunnelManager():
         self.client = client
         self.status_callback = status_callback
         self.pattern_list = [
-            dict(id='connecting', pattern=re.compile(b'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n')),
-            dict(id='connected', pattern=re.compile(b'debug1: Connection established.\r\n')),
-            dict(id='authenticated', pattern=re.compile(b'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n')),
-            dict(id='running', pattern=re.compile(b'debug1: Entering interactive session.\r\n')),
-            dict(id='not_known', pattern=re.compile(b'ssh: [^:]+: Name or service not known\r\n')),
-            dict(id='refused', pattern=re.compile(b'ssh: connect to host [^:]+: Connection refused\r\n')),
-            dict(id='denied', pattern=re.compile(b'Permission denied \(publickey,password\).\r\n')),
-            dict(id='closed', pattern=re.compile(b'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
+            dict(id='connecting', pattern=re.compile(r'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n')),
+            dict(id='connected', pattern=re.compile(r'debug1: Connection established.\r\n')),
+            dict(id='authenticated', pattern=re.compile(r'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n')),
+            dict(id='running', pattern=re.compile(r'debug1: Entering interactive session.\r\n')),
+            dict(id='not_known', pattern=re.compile(r'ssh: [^:]+: Name or service not known\r\n')),
+            dict(id='refused', pattern=re.compile(r'ssh: connect to host [^:]+: Connection refused\r\n')),
+            dict(id='denied', pattern=re.compile(r'Permission denied \(publickey,password\).\r\n')),
+            dict(id='closed', pattern=re.compile(r'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
         ]
         self.loop_ssh_tunnel = True
         self.process = None
@@ -131,11 +131,11 @@ class SSHTunnelManager():
                         logger.error(e)
                 else:
                     while not self.stdout_queue.empty():
-                        ssh_stdout = self.stdout_queue.get_nowait()
+                        ssh_stdout = self.stdout_queue.get_nowait().decode('utf-8')
                         for pattern_dict in self.pattern_list:
                             if pattern_dict['pattern'].match(ssh_stdout):
                                 self.update_ssh_state('state', pattern_dict['id'])
-                                self.update_ssh_state('last_tunnel_info', ssh_stdout.decode('utf-8'))
+                                self.update_ssh_state('last_tunnel_info', ssh_stdout)
             else:
                 try:
                     self.establish_tunnel()
