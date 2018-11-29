@@ -11,6 +11,7 @@ import subprocess
 import time
 import multiprocessing
 import re
+import signal
 
 logger = logging.getLogger('cm_client.ssh_tunnel')
 
@@ -77,16 +78,7 @@ class SSHTunnelManager():
         public_key = None
         response = None
         logging.debug('establishing new tunnel')
-        if self.stdout_reader:
-            logger.debug('Clean old stdout process')
-            self.stdout_reader.terminate()
-        if self.stderr_reader:
-            logger.debug('Clean old stderr process')
-            self.stderr_reader.terminate()
-        if self.stdout_queue:
-            logger.debug('Clean old ssh queue')
-            self.stdout_queue.close()
-            self.stdout_queue.cancel_join_thread()
+        self._stop_reader()
         try:
             logging.debug('prepare tunnel')
             public_key = get_ssh_public_key()
@@ -122,12 +114,17 @@ class SSHTunnelManager():
             logger.debug('Wait for ssh process')
             self.process.kill()
             logger.warning('SSH tunnel killed')
+        self._stop_reader()
+
+    def _stop_reader(self):
         if self.stdout_reader:
             logger.debug('Wait for stdout process')
             self.stdout_reader.terminate()
+            os.kill(self.stdout_reader.pid, signal.SIGKILL)
         if self.stderr_reader:
             logger.debug('Wait for stderr process')
             self.stderr_reader.terminate()
+            os.kill(self.stderr_reader.pid, signal.SIGKILL)
         if self.stdout_queue:
             logger.debug('Wait for ssh queue')
             self.stdout_queue.close()
