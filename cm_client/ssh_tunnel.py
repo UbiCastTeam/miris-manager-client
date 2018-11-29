@@ -175,6 +175,7 @@ class AsynchronousFileReader(multiprocessing.Process):
             line = self._fd.readline().decode('utf-8')
             if line:
                 self._queue.put(line)
+                continue
             time.sleep(2)
 
     def eof(self):
