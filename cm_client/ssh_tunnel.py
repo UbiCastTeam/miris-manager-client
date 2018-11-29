@@ -74,8 +74,26 @@ class SSHTunnelManager():
         }
 
     def establish_tunnel(self):
-        public_key = get_ssh_public_key()
-        response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
+        public_key = None
+        response = None
+        logging.debug('establishing new tunnel')
+        if self.stdout_reader:
+            logger.debug('Clean old stdout process')
+            self.stdout_reader.terminate()
+        if self.stderr_reader:
+            logger.debug('Clean old stderr process')
+            self.stderr_reader.terminate()
+        if self.stdout_queue:
+            logger.debug('Clean old ssh queue')
+            self.stdout_queue.close()
+            self.stdout_queue.cancel_join_thread()
+        try:
+            logging.debug('prepare tunnel')
+            public_key = get_ssh_public_key()
+            response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
+        except Exception as e:
+            logger.error('Cannot prepare ssh tunnel : %s' % str(e))
+            return
         self.update_ssh_state('port', response['port'])
         target = self.client.conf['URL'].split('://')[-1]
         if target.endswith('/'):
@@ -100,17 +118,21 @@ class SSHTunnelManager():
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
-        if self.stdout_reader:
-            self.stdout_reader.terminate()
-        if self.stderr_reader:
-            self.stderr_reader.terminate()
-        if self.stdout_queue:
-            self.stdout_queue.close()
-            logger.warning('ssh queue killed')
         if self.process:
             logger.debug('Wait for ssh process')
             self.process.kill()
             logger.warning('SSH tunnel killed')
+        if self.stdout_reader:
+            logger.debug('Wait for stdout process')
+            self.stdout_reader.terminate()
+        if self.stderr_reader:
+            logger.debug('Wait for stderr process')
+            self.stderr_reader.terminate()
+        if self.stdout_queue:
+            logger.debug('Wait for ssh queue')
+            self.stdout_queue.close()
+            self.stdout_queue.cancel_join_thread()
+            logger.warning('ssh queue killed')
 
     def tunnel_loop(self):
         check_delay = 10
@@ -121,17 +143,17 @@ class SSHTunnelManager():
                 if return_code is not None:
                     ssh_logs = ''
                     while not self.stdout_queue.empty():
-                        ssh_logs += self.stdout_queue.get_nowait().decode('utf-8')
+                        ssh_logs += self.stdout_queue.get_nowait()
                     logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
                     self.update_ssh_state('state', 'error')
                     self.update_ssh_state('last_tunnel_info', ssh_logs)
                     try:
                         self.establish_tunnel()
                     except Exception as e:
-                        logger.error(e)
+                        logger.error('error while establishing tunnel %s' % str(e))
                 else:
                     while not self.stdout_queue.empty():
-                        ssh_stdout = self.stdout_queue.get_nowait().decode('utf-8')
+                        ssh_stdout = self.stdout_queue.get_nowait()
                         for pattern_dict in self.pattern_list:
                             if pattern_dict['pattern'].match(ssh_stdout):
                                 self.update_ssh_state('state', pattern_dict['id'])
@@ -140,7 +162,7 @@ class SSHTunnelManager():
                 try:
                     self.establish_tunnel()
                 except Exception as e:
-                    logger.error(e)
+                    logger.error('error while establishing tunnel %s' % str(e))
 
             time.sleep(check_delay)
 
@@ -153,11 +175,10 @@ class AsynchronousFileReader(multiprocessing.Process):
 
     def run(self):
         while self.is_alive():
-            line = self._fd.readline()
+            line = self._fd.readline().decode('utf-8')
             if line:
                 self._queue.put(line)
-            else:
-                time.sleep(0.5)
+            time.sleep(2)
 
     def eof(self):
         return not self.is_alive() and self._queue.empty()
