@@ -100,7 +100,7 @@ class SSHTunnelManager():
             target = target[:-1]
         self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
         logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
         self.stdout_queue = multiprocessing.Queue()
         self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
         self.stdout_reader.start()
