@@ -56,6 +56,7 @@ class SSHTunnelManager():
             dict(id='connecting', pattern=re.compile(r'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n')),
             dict(id='connected', pattern=re.compile(r'debug1: Connection established.\r\n')),
             dict(id='authenticated', pattern=re.compile(r'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n')),
+            dict(id='authenticated', pattern=re.compile(r'Authenticated to (?P<hostname>[^ ]+) \(\[(?P<ip>[0-9\.]{7,15})\]:(?P<port>\d{1,5})\).\r\n')),
             dict(id='running', pattern=re.compile(r'debug1: Entering interactive session.\r\n')),
             dict(id='not_known', pattern=re.compile(r'ssh: [^:]+: Name or service not known\r\n')),
             dict(id='refused', pattern=re.compile(r'ssh: connect to host [^:]+: Connection refused\r\n')),
@@ -78,6 +79,7 @@ class SSHTunnelManager():
         public_key = None
         response = None
         logging.debug('establishing new tunnel')
+        self._try_closing_process()
         self._stop_reader()
         try:
             logging.debug('prepare tunnel')
@@ -91,7 +93,7 @@ class SSHTunnelManager():
         if target.endswith('/'):
             target = target[:-1]
         self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-        logger.info('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
+        logger.debug('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
         self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
         self.stdout_queue = multiprocessing.Queue()
         self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
@@ -110,52 +112,92 @@ class SSHTunnelManager():
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
+        self._try_closing_process()
+        self._stop_reader()
+
+    def _try_closing_process(self):
         if self.process:
             logger.debug('Wait for ssh process')
-            self.process.kill()
-            logger.warning('SSH tunnel killed')
-        self._stop_reader()
+            self.process.terminate()
+            timeout = 5
+            while self.process.poll() is None and timeout:
+                timeout -= 1
+                time.sleep(1)
+            if not timeout:
+                self.process.kill()
+                logger.warning('SSH tunnel killed')
+            else:
+                logger.warning('SSH tunnel terminated')
 
     def _stop_reader(self):
         if self.stdout_reader:
             logger.debug('Wait for stdout process')
             self.stdout_reader.terminate()
-            os.kill(self.stdout_reader.pid, signal.SIGKILL)
+            timeout = 5
+            while self.stdout_reader.is_alive() and timeout:
+                timeout -= 1
+                time.sleep(1)
+            if not timeout:
+                os.kill(self.stdout_reader.pid, signal.SIGKILL)
+                logger.warning('SSH stdout_reader killed')
+            else:
+                logger.warning('SSH stdout_reader terminated')
         if self.stderr_reader:
             logger.debug('Wait for stderr process')
             self.stderr_reader.terminate()
-            os.kill(self.stderr_reader.pid, signal.SIGKILL)
+            timeout = 5
+            while self.stderr_reader.is_alive() and timeout:
+                timeout -= 1
+                time.sleep(1)
+            if not timeout:
+                os.kill(self.stderr_reader.pid, signal.SIGKILL)
+                logger.warning('SSH stderr_reader killed')
+            else:
+                logger.warning('SSH stderr_reader terminated')
         if self.stdout_queue:
             logger.debug('Wait for ssh queue')
             self.stdout_queue.close()
             self.stdout_queue.cancel_join_thread()
-            logger.warning('ssh queue killed')
+            logger.warning('SSH queue closed')
 
     def tunnel_loop(self):
         check_delay = 10
         while self.loop_ssh_tunnel:
             logger.debug('Checking ssh tunnel process.')
+            need_retry = False
             if self.process:
                 return_code = self.process.poll()
                 if return_code is not None:
                     ssh_logs = ''
                     while not self.stdout_queue.empty():
                         ssh_logs += self.stdout_queue.get_nowait()
-                    logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
                     self.update_ssh_state('state', 'error')
                     self.update_ssh_state('last_tunnel_info', ssh_logs)
-                    try:
-                        self.establish_tunnel()
-                    except Exception as e:
-                        logger.error('error while establishing tunnel %s' % str(e))
+                    logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
+                    need_retry = True
                 else:
                     while not self.stdout_queue.empty():
                         ssh_stdout = self.stdout_queue.get_nowait()
+                        id_founded = None
                         for pattern_dict in self.pattern_list:
                             if pattern_dict['pattern'].match(ssh_stdout):
-                                self.update_ssh_state('state', pattern_dict['id'])
+                                id_founded = pattern_dict['id']
+                                self.update_ssh_state('state', id_founded)
                                 self.update_ssh_state('last_tunnel_info', ssh_stdout)
+                                break
+                        if not id_founded:
+                            if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
+                                logger.debug(ssh_stdout)
+                            else:
+                                logger.warning(ssh_stdout)
+                        elif id_founded not in ['connecting', 'connected', 'authenticated', 'running']:
+                            logger.error('Need to retry tunnel because ssh command failed in stdout %s' % id_founded)
+                            need_retry = True
+                            break
             else:
+                logger.debug('Need to retry tunnel because no process')
+                need_retry = True
+            if need_retry:
                 try:
                     self.establish_tunnel()
                 except Exception as e:
