@@ -51,6 +51,7 @@
         "ARCHIVE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/archive/"},
         "DELETE_MESSAGE": {"method": "post", "url": "/api/v3/fleet/messages/delete/"},
         "PREPARE_TUNNEL": {"method": "post", "url": "/api/v3/fleet/proxy/prepare-tunnel/"},
-        "CHECK_TOKEN": {"method": "post", "url": "/api/v3/registration/check-token/"}
+        "CHECK_TOKEN": {"method": "post", "url": "/api/v3/registration/check-token/"},
+        "SET_PROFILES": {"method": "post", "url": "/api/v3/fleet/profiles/set/"}
     }
 }
