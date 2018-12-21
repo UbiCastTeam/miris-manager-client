@@ -59,6 +59,7 @@ class SSHTunnelManager():
             dict(id='authenticated', pattern=re.compile(r'Authenticated to (?P<hostname>[^ ]+) \(\[(?P<ip>[0-9\.]{7,15})\]:(?P<port>\d{1,5})\).\r\n')),
             dict(id='running', pattern=re.compile(r'debug1: Entering interactive session.\r\n')),
             dict(id='not_known', pattern=re.compile(r'ssh: [^:]+: Name or service not known\r\n')),
+            dict(id='port_refused', pattern=re.compile(r'Warning: remote port forwarding failed for listen port (?P<port>\d{1,5})')),
             dict(id='refused', pattern=re.compile(r'ssh: connect to host [^:]+: Connection refused\r\n')),
             dict(id='denied', pattern=re.compile(r'Permission denied \(publickey,password\).\r\n')),
             dict(id='closed', pattern=re.compile(r'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
@@ -112,8 +113,8 @@ class SSHTunnelManager():
     def close_tunnel(self):
         logger.warning('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
-        self._try_closing_process()
         self._stop_reader()
+        self._try_closing_process()
 
     def _try_closing_process(self):
         if self.process:
@@ -163,7 +164,6 @@ class SSHTunnelManager():
     def tunnel_loop(self):
         check_delay = 10
         while self.loop_ssh_tunnel:
-            logger.debug('Checking ssh tunnel process.')
             need_retry = False
             if self.process:
                 return_code = self.process.poll()
