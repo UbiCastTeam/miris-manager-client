@@ -125,8 +125,9 @@ class SSHTunnelManager():
                 timeout -= 1
                 time.sleep(1)
             if not timeout:
+                logger.error('SSH tunnel has not terminate try to kill')
+                os.system('kill -- -$(ps hopgid %s | sed \'s/^ *//g\')' % self.process.pid)
                 self.process.kill()
-                logger.warning('SSH tunnel killed')
             else:
                 logger.warning('SSH tunnel terminated')
 
