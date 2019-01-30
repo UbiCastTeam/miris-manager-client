@@ -53,6 +53,7 @@ class LongPollingManager():
     def call_long_polling(self):
         success = False
         try:
+            logger.debug('Make long polling request')
             response = self.client.api_request('LONG_POLLING', timeout=300)
         except Exception as e:
             if 'timeout=300' not in str(e):
@@ -60,7 +61,7 @@ class LongPollingManager():
                 if self.last_error == e.__class__.__name__:
                     logger.debug(msg)  # Avoid spamming
                 else:
-                    logger.info(msg)
+                    logger.error(msg)
                     self.last_error = e.__class__.__name__
         else:
             self.last_error = None
