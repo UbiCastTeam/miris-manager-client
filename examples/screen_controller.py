@@ -8,14 +8,12 @@ import logging
 import os
 from cm_client import CampusManagerClient
 
-logger = logging.getLogger('cm_screen_controller')
+logger = logging.getLogger('screen_controller')
 
 
 class ScreenController(CampusManagerClient):
     DEFAULT_CONF = {
-        'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
-            'gcontrol': {'version': 1},
-        },
+        'CAPABILITIES': ['screen_control', 'screenshot'],
     }
 
     def handle_action(self, action, params):
@@ -46,6 +44,7 @@ class ScreenController(CampusManagerClient):
 
 if __name__ == '__main__':
     client = ScreenController()
+    client.update_capabilities()
     try:
         client.long_polling_loop()
     except KeyboardInterrupt:

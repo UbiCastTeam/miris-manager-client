@@ -8,16 +8,13 @@ import json
 import logging
 from cm_client import CampusManagerClient
 
-logger = logging.getLogger('cm_fake_mediacoder')
+logger = logging.getLogger('fake_mediacoder')
 
 
 class FakeMediaCoder(CampusManagerClient):
     DEFAULT_CONF = {
         'URL': 'http://localhost:9000',
-        'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
-            'gcontrol': {'iframe': {}},
-            'recording': {},
-        },
+        'CAPABILITIES': ['record', 'network_record', 'web_control', 'screenshot'],
     }
     PROFILES = {'main': {'has_password': False, 'can_live': False, 'name': 'main', 'label': 'Main', 'type': 'recorder'}}
 

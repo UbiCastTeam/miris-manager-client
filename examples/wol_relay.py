@@ -9,15 +9,12 @@ import os
 import re
 from cm_client import CampusManagerClient
 
-logger = logging.getLogger('cm_wol_relay')
+logger = logging.getLogger('wol_relay')
 
 
 class WOLRelay(CampusManagerClient):
     DEFAULT_CONF = {
-        'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
-            'wol_relay': {'version': 1},
-            'player': {'version': 1},
-        },
+        'CAPABILITIES': ['send_wake_on_lan'],
         'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary
     }
 
@@ -29,16 +26,6 @@ class WOLRelay(CampusManagerClient):
             logger.info('Running wake on lan: success: %s, message: %s', success, message)
             if not success:
                 raise Exception('Failed to send wake on lan: %s' % message)
-        elif action == 'PLAY_STREAM':  # player capability
-            # Play a video stream
-            # http://www.sample-videos.com/video/mp4/240/big_buck_bunny_240p_1mb.mp4
-            stream_uri = params.get('stream_uri')
-            logger.info('Playing stream "%s".', stream_uri)
-            if not stream_uri:
-                raise Exception('No stream URI to play.')
-            if '"' in stream_uri or '\'' in stream_uri:
-                raise Exception('Invalid stream URI.')
-            os.system('(vlc "%s" &)' % stream_uri)
         else:
             raise Exception('Unsupported action: %s.' % action)
 
@@ -69,6 +56,7 @@ class WOLRelay(CampusManagerClient):
 
 if __name__ == '__main__':
     client = WOLRelay()
+    client.update_capabilities()
     try:
         client.long_polling_loop()
     except KeyboardInterrupt:

@@ -8,14 +8,12 @@ import json
 import logging
 from cm_client import CampusManagerClient
 
-logger = logging.getLogger('cm_recorder_controller')
+logger = logging.getLogger('recorder_controller')
 
 
 class RecorderController(CampusManagerClient):
     DEFAULT_CONF = {
-        'CAPABILITIES': {  # This list makes available or not actions buttons in Campus Manager
-            'recording': {'version': 1},
-        },
+        'CAPABILITIES': ['record', 'shutdown'],
     }
     PROFILES = {'main': {'has_password': False, 'can_live': False, 'name': 'main', 'label': 'Main', 'type': 'recorder'}}
 

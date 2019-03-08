@@ -62,7 +62,7 @@ class CampusManagerClient():
             return
         logger.info('No API key in configuration "%s", requesting system registration...' % self.LOCAL_CONF)
         data = cm_lib.get_host_info(self.conf['URL'])
-        data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
+        data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         req = requests.post(
             url=self.conf['URL'] + self.get_url_info('REGISTER_SYSTEM')['url'],
             data=data,
@@ -150,14 +150,14 @@ class CampusManagerClient():
 
     def set_info(self):
         data = cm_lib.get_host_info(self.conf['URL'])
-        data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
+        data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         # Make API request
         response = self.api_request('SET_INFO', data=data)
         return response
 
     def update_capabilities(self):
         data = dict()
-        data['capabilities'] = json.dumps(self.conf['CAPABILITIES'])
+        data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         # Make API request
         response = self.api_request('SET_INFO', data=data)
         return response
