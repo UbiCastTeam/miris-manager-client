@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Campus Manager client signing functions
+Miris Manager client signing functions
 This module is not intended to be used directly, only the client class should be used.
 '''
 import base64
@@ -10,7 +10,7 @@ import hashlib
 import hmac
 import logging
 
-logger = logging.getLogger('cm_client.signing')
+logger = logging.getLogger('mm_client.signing')
 
 
 def get_signature(client):

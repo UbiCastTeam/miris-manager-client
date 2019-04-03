@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 from distutils.core import setup
-import cm_client
+import mm_client
 
 
 def fullsplit(path, result=None):
@@ -28,7 +28,7 @@ root_dir = os.path.dirname(__file__)
 if root_dir != '':
     os.chdir(root_dir)
 
-for dirpath, dirnames, filenames in os.walk('cm_client'):
+for dirpath, dirnames, filenames in os.walk('mm_client'):
     # Ignore PEP 3147 cache dirs and those whose names start with '.'
     dirnames[:] = [d for d in dirnames if not d.startswith('.') and d != '__pycache__']
     parts = fullsplit(dirpath)
@@ -49,12 +49,12 @@ for dirpath, dirnames, filenames in os.walk('cm_client'):
         package_files.extend([os.path.join(path, f) for f in filenames])
 
 setup(
-    name='cm_client',
-    version=cm_client.__version__,
-    description='A Python3 client to use Campus Manager remote control.',
+    name='mm_client',
+    version=mm_client.__version__,
+    description='A Python3 client to use Miris Manager remote control.',
     author='Stéphane Diemer',
     author_email='stephane.diemer@ubicast.eu',
-    url='https://github.com/UbiCastTeam/campus-manager-client',
+    url='https://github.com/UbiCastTeam/miris-manager-client',
     license='cc-by-sa',
     packages=packages,
     package_data=package_data,

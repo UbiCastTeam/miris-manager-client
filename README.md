@@ -1,27 +1,23 @@
-# campus-manager-client
+# UbiCast Miris Manager client
 
-A Python3 client to use UbiCast Campus Manager remote control.
+A Python3 client to use UbiCast Miris Manager remote control API.
 
-This client is intended to act as a system in Campus Manager so it allows you to integrate a device in Campus Manager in order to control it.
-For now this client can not handle user API keys.
+This client is intended to act as a system in Miris Manager so it allows you to integrate a device in order to control it using Miris Manager.
 
 Here is the list of actions that can be sent to the client depending on its supported capabilities:
 
-    # Basic actions, not related to any capabilities
-    SHUTDOWN: capability: none, description: Shutdown system
-    REBOOT: capability: none, description: Reboot system
+    # Basic actions
+    SHUTDOWN: capability: shutdown, description: Shutdown system
+    REBOOT: capability: reboot, description: Reboot system
+    UPGRADE: capability: upgrade, description: Upgrade system software
     # Recording
-    START_RECORDING: capability: recording, description: Start recording
-    STOP_RECORDING: capability: recording, description: Stop recording
-    LIST_PROFILES: capability: recording, description: Refresh profiles list
+    START_RECORDING: capability: record, description: Start recording
+    STOP_RECORDING: capability: record, description: Stop recording
+    LIST_PROFILES: capability: record, description: Refresh profiles list
+    # Publishing
+    START_PUBLISHING: capability: publish, description: Start publishing non published media
+    STOP_PUBLISHING: capability: publish, description: Stop publishing
     # Wake on lan
-    WAKE_ON_LAN: capability: wol, description: Broadcast WOL package to wake this system
-    WAKE_ON_LAN_SEND: capability: wol_relay, description: Send a WOL package from this system
-    # Player
-    PLAY_STREAM: capability: player, description: Play stream
-    # Graphical control
-    GET_SCREENSHOT: capability: gcontrol, description: Get screenshot
-    SIMULATE_CLICK: capability: gcontrol, description: Simulate click
-    SEND_TEXT: capability: gcontrol, description: Send text to the system
+    WAKE_ON_LAN_SEND: capability: send_wake_on_lan, description: Send a wake on LAN network package from this system to wake another system
 
-Take a look at the example file to learn how to create your client.
+Take a look at the example files to learn how to create your client.

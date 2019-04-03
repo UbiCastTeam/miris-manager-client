@@ -4,11 +4,11 @@
 Script to send a message
 '''
 import datetime
-from cm_client import CampusManagerClient
+from mm_client import MirisManagerClient
 
 
 if __name__ == '__main__':
-    client = CampusManagerClient()
+    client = MirisManagerClient()
     client.api_request('ADD_MESSAGE', data=dict(
         content='%s\nTest message' % datetime.datetime.now(),
         content_debug='Debug content with some special characters:\n\tđ€¶←←ħ¶ŧħ<< "\' fF5ef',

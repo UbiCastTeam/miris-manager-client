@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-An example of Campus Manager client usage.
+An example of Miris Manager client usage.
 This script is intended to create devices acting as wake on lan relay and video displayer.
 '''
 import logging
 import os
 import re
-from cm_client import CampusManagerClient
+from mm_client import MirisManagerClient
 
 logger = logging.getLogger('wol_relay')
 
 
-class WOLRelay(CampusManagerClient):
+class WOLRelay(MirisManagerClient):
     DEFAULT_CONF = {
         'CAPABILITIES': ['send_wake_on_lan'],
         'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary

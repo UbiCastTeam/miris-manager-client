@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-An example of Campus Manager client usage.
+An example of Miris Manager client usage.
 This script is intended to send screenshot and handle click requests.
 '''
 import logging
 import os
-from cm_client import CampusManagerClient
+from mm_client import MirisManagerClient
 
 logger = logging.getLogger('screen_controller')
 
 
-class ScreenController(CampusManagerClient):
+class ScreenController(MirisManagerClient):
     DEFAULT_CONF = {
         'CAPABILITIES': ['screen_control', 'screenshot'],
     }
@@ -26,7 +26,7 @@ class ScreenController(CampusManagerClient):
             # TODO
 
         elif action == 'GET_SCREENSHOT':
-            self.set_status(remaining_space='auto')  # Send remaining space to Campus Manager
+            self.set_status(remaining_space='auto')  # Send remaining space to Miris Manager
             self.set_screenshot('/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'), file_name='screen.png')
             logger.info('Screenshot sent.')
 

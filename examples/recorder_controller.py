@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-An example of Campus Manager client usage.
+An example of Miris Manager client usage.
 This script is intended to control a recorder.
 '''
 import json
 import logging
-from cm_client import CampusManagerClient
+from mm_client import MirisManagerClient
 
 logger = logging.getLogger('recorder_controller')
 
 
-class RecorderController(CampusManagerClient):
+class RecorderController(MirisManagerClient):
     DEFAULT_CONF = {
         'CAPABILITIES': ['record', 'shutdown'],
     }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Campus Manager client library
+Miris Manager client library
 This module is not intended to be used directly, only the client class should be used.
 '''
 import json
@@ -12,7 +12,7 @@ import socket
 import subprocess
 import uuid
 
-logger = logging.getLogger('cm_client.lib')
+logger = logging.getLogger('mm_client.lib')
 
 BASE_CONF_PATH = os.path.join(os.path.dirname(__file__), 'conf.json')
 
@@ -70,24 +70,24 @@ def update_conf(local_conf, key, value):
     logger.debug('Configuration file "%s" updated: "%s" set to "%s".', local_conf, key, value)
 
 
-def get_host_info(cm_url):
+def get_host_info(url):
     # get hostname
     hostname = socket.gethostname()
     logger.debug('Hostname is %s.', hostname)
     # get local IP address
-    logger.debug('check local ip of cm %s' % cm_url)
-    cm_host = cm_url.split('://')[-1]
-    if ':' in cm_host:
-        cm_host, cm_port = cm_host.split(':')
-        cm_port = int(cm_port)
-    elif cm_url.startswith('http:'):
-        cm_port = 80
+    logger.debug('check local ip of %s' % url)
+    host = url.split('://')[-1]
+    if ':' in host:
+        host, port = host.split(':')
+        port = int(port)
+    elif url.startswith('http:'):
+        port = 80
     else:
-        cm_port = 443
+        port = 443
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    if cm_host.endswith('/'):
-        cm_host = cm_host[:-1]
-    s.connect((cm_host, cm_port))
+    if host.endswith('/'):
+        host = host[:-1]
+    s.connect((host, port))
     local_ip = s.getsockname()[0]
     s.close()
     logger.debug('Local IP is %s.', local_ip)

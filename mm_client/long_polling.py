@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Campus Manager long polling management
+Miris Manager long polling management
 This module is not intended to be used directly, only the client class should be used.
 '''
 import datetime
@@ -12,9 +12,9 @@ import sys
 import time
 import traceback
 
-from cm_client import signing
+from mm_client import signing
 
-logger = logging.getLogger('cm_client.long_polling')
+logger = logging.getLogger('mm_client.long_polling')
 
 
 class LongPollingManager():
@@ -29,7 +29,7 @@ class LongPollingManager():
         # Check if systemd-notify should be called
         self.run_systemd_notify = self.client.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
-        logger.info('Campus Manager server is %s.', self.client.conf['URL'])
+        logger.info('Miris Manager server is %s.', self.client.conf['URL'])
         logger.info('Starting connection loop using url: %s.', self.client.get_url_info('LONG_POLLING'))
         self.loop_running = True
 

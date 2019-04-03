@@ -6,12 +6,12 @@ Fake MediaCoder client for tests.
 import os
 import json
 import logging
-from cm_client import CampusManagerClient
+from mm_client import MirisManagerClient
 
 logger = logging.getLogger('fake_mediacoder')
 
 
-class FakeMediaCoder(CampusManagerClient):
+class FakeMediaCoder(MirisManagerClient):
     DEFAULT_CONF = {
         'URL': 'http://localhost:9000',
         'CAPABILITIES': ['record', 'network_record', 'web_control', 'screenshot'],
@@ -32,7 +32,7 @@ class FakeMediaCoder(CampusManagerClient):
             return json.dumps(self.PROFILES)
 
         elif action == 'GET_SCREENSHOT':
-            self.set_status(remaining_space='auto')  # Send remaining space to Campus Manager
+            self.set_status(remaining_space='auto')  # Send remaining space to Miris Manager
             self.set_screenshot('/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'), file_name='screen.png')
             logger.info('Screenshot sent.')
 

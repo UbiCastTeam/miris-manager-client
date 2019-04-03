@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Campus Manager SSH tunnel management
+Miris Manager SSH tunnel management
 This module is not intended to be used directly, only the client class should be used.
-The SSH tunnel goal is to access the system web interface (HTTPS) from Campus Manager using a connection from the system to the Campus Manager.
+The SSH tunnel goal is to access the system web interface (HTTPS) from Miris Manager using a connection from the system to the Miris Manager.
 '''
 import logging
 import os
@@ -13,11 +13,11 @@ import multiprocessing
 import re
 import signal
 
-logger = logging.getLogger('cm_client.ssh_tunnel')
+logger = logging.getLogger('mm_client.ssh_tunnel')
 
 
 def get_ssh_public_key():
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
+    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
     ssh_dir = os.path.dirname(ssh_key_path)
     if not os.path.exists(ssh_dir):
         os.makedirs(ssh_dir)
@@ -41,7 +41,7 @@ def get_ssh_public_key():
 
 
 def prepare_ssh_command(target, port):
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/campus-manager-client-key'))
+    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
     command = ['ssh', '-i', ssh_key_path, '-o', 'IdentitiesOnly yes', '-nvNT', '-o', 'NumberOfPasswordPrompts 0', '-o' 'CheckHostIP no', '-o', 'StrictHostKeyChecking no', '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
     logger.info('Running following command to establish SSH tunnel: %s', command)
     return command

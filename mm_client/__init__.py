@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-Campus Manager client class
+Miris Manager client class
 '''
 import json
 import logging
 import os
 import requests
-from cm_client import lib as cm_lib
-from cm_client import signing
-from cm_client.long_polling import LongPollingManager
-from cm_client.ssh_tunnel import SSHTunnelManager
+from mm_client import lib as mm_lib
+from mm_client import signing
+from mm_client.long_polling import LongPollingManager
+from mm_client.ssh_tunnel import SSHTunnelManager
 
-__version__ = '3.0'
-logger = logging.getLogger('cm_client')
+__version__ = '4.0'
+logger = logging.getLogger('mm_client')
 
 
-class CampusManagerClient():
+class MirisManagerClient():
     DEFAULT_CONF = None  # can be either a path or a dict
-    LOCAL_CONF = os.path.expanduser('~/.cm_client.json')  # can be either a path or a dict
+    LOCAL_CONF = os.path.expanduser('~/.mm_client.json')  # can be either a path or a dict
 
     def __init__(self, setup_logging=True):
         # Setup logging
@@ -44,11 +44,11 @@ class CampusManagerClient():
         self._ssh_tunnel_manager = None
 
     def load_conf(self):
-        return cm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
+        return mm_lib.load_conf(self.DEFAULT_CONF, self.LOCAL_CONF)
 
     def update_conf(self, key, value):
         self.conf[key] = value
-        cm_lib.update_conf(self.LOCAL_CONF, key, value)
+        mm_lib.update_conf(self.LOCAL_CONF, key, value)
 
     def get_url_info(self, url_or_action):
         if url_or_action.startswith('/'):
@@ -61,7 +61,7 @@ class CampusManagerClient():
         if self.conf.get('API_KEY'):
             return
         logger.info('No API key in configuration "%s", requesting system registration...' % self.LOCAL_CONF)
-        data = cm_lib.get_host_info(self.conf['URL'])
+        data = mm_lib.get_host_info(self.conf['URL'])
         data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         req = requests.post(
             url=self.conf['URL'] + self.get_url_info('REGISTER_SYSTEM')['url'],
@@ -133,7 +133,7 @@ class CampusManagerClient():
         # long polling responses.
         # IMPORTANT: Any code written here should not be blocking more than 5s
         # because of the delay after which the system is considered as offline
-        # in Campus Manager.
+        # in Miris Manager.
         raise NotImplementedError('Your class should override the "handle_action" method.')
 
     def set_command_status(self, command_uid, status='DONE', data=None):
@@ -149,7 +149,7 @@ class CampusManagerClient():
             logger.error('Unable to communicate command status: %s %s', type(e), e)
 
     def set_info(self):
-        data = cm_lib.get_host_info(self.conf['URL'])
+        data = mm_lib.get_host_info(self.conf['URL'])
         data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         # Make API request
         response = self.api_request('SET_INFO', data=data)
@@ -173,7 +173,7 @@ class CampusManagerClient():
         if profile is not None:
             data['profile'] = profile
         if remaining_space == 'auto':
-            remaining_space = cm_lib.get_remaining_space()
+            remaining_space = mm_lib.get_remaining_space()
         if remaining_space is not None:
             data['remaining_space'] = remaining_space
         if remaining_time is not None:

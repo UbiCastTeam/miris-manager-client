@@ -1,18 +1,18 @@
 {
-    // Campus Manager client default configuration
-    // This file should not be modified directly, put your modification in your local file.
+    // Miris Manager client default configuration
+    // This file should not be modified directly, put your modification in your local file (by default: "~/.mm_client.json").
 
     // Logging level
     "LOG_LEVEL": "INFO",
 
-    // URL of Campus Manager server
-    "URL": "https://campusmanager",
+    // URL of Miris Manager server
+    "URL": "https://mirismanager",
 
-    // API key of this system in Campus Manager
+    // API key of this system in Miris Manager
     // The API key is automatically set when empty and when Capus Manager discovery mode is enabled.
     "API_KEY": "",
 
-    // Secret key of this system in Campus Manager, used to sign messages
+    // Secret key of this system in Miris Manager, used to sign messages
     "SECRET_KEY": "",
 
     // Try to register this system if no API_KEY is defined
@@ -31,10 +31,10 @@
     // Example: {"http": "http://10.10.1.10:3128", "https": "http://10.10.1.10:1080"}
     "PROXIES": null,
 
-    // This list makes available or not actions buttons in Campus Manager
+    // This list makes available or not actions buttons in Miris Manager
     "CAPABILITIES": {},
 
-    // List of Campus Manager urls (do not overwritte this)
+    // List of Miris Manager urls (do not overwritte this)
     "API_CALLS": {
         "PING": {"method": "get", "url": "/api/", "anonymous": true},
         "TIME": {"method": "get", "url": "/api/time/", "anonymous": true},
