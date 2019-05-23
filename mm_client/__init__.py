@@ -7,10 +7,10 @@ import json
 import logging
 import os
 import requests
-from mm_client import lib as mm_lib
-from mm_client import signing
-from mm_client.long_polling import LongPollingManager
-from mm_client.ssh_tunnel import SSHTunnelManager
+from . import lib as mm_lib
+from .signing import get_signature
+from .long_polling import LongPollingManager
+from .ssh_tunnel import SSHTunnelManager
 
 __version__ = '4.0'
 logger = logging.getLogger('mm_client')
@@ -102,7 +102,7 @@ class MirisManagerClient():
                     logger.error('Registration failed: %s', e)
                     raise Exception('Registration failed: %s' % e)
             # Add signature in headers
-            _headers = signing.get_signature(self) if not anonymous else dict()
+            _headers = get_signature(self) if not anonymous else dict()
             if headers:
                 _headers.update(headers)
         # Make API request

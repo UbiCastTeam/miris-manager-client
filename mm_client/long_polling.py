@@ -12,7 +12,7 @@ import sys
 import time
 import traceback
 
-from mm_client import signing
+from .signing import check_signature
 
 logger = logging.getLogger('mm_client.long_polling')
 
@@ -85,7 +85,7 @@ class LongPollingManager():
     def process_long_polling(self, response):
         logger.debug('Processing response.')
         if self.client.conf.get('API_KEY'):
-            invalid = signing.check_signature(self.client, response)
+            invalid = check_signature(self.client, response)
             if invalid:
                 raise Exception('Invalid signature: %s' % invalid)
         action = response.get('action')
