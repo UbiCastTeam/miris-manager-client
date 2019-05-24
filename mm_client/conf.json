@@ -5,8 +5,8 @@
     // Logging level
     "LOG_LEVEL": "INFO",
 
-    // URL of Miris Manager server
-    "URL": "https://mirismanager",
+    // Server url of Miris Manager
+    "SERVER_URL": "https://mirismanager",
 
     // API key of this system in Miris Manager
     // The API key is automatically set when empty and when Capus Manager discovery mode is enabled.
@@ -21,8 +21,8 @@
     // Notify systemd watchdog after each long polling call
     "WATCHDOG": false,
 
-    // Check server SSL certificate
-    "CHECK_SSL": false,
+    // Verify server SSL certificate
+    "VERIFY_SSL": false,
 
     // API requests max duration in seconds
     "TIMEOUT": 10,

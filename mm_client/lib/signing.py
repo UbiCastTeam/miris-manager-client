@@ -10,7 +10,7 @@ import hashlib
 import hmac
 import logging
 
-logger = logging.getLogger('mm_client.signing')
+logger = logging.getLogger('mm_client.lib.signing')
 
 
 def get_signature(client):

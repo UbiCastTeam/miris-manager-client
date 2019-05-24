@@ -13,7 +13,7 @@ import multiprocessing
 import re
 import signal
 
-logger = logging.getLogger('mm_client.ssh_tunnel')
+logger = logging.getLogger('mm_client.lib.ssh_tunnel')
 
 
 def get_ssh_public_key():
@@ -90,7 +90,7 @@ class SSHTunnelManager():
             logger.error('Cannot prepare ssh tunnel : %s' % str(e))
             return
         self.update_ssh_state('port', response['port'])
-        target = self.client.conf['URL'].split('://')[-1]
+        target = self.client.conf['SERVER_URL'].split('://')[-1]
         if target.endswith('/'):
             target = target[:-1]
         self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))

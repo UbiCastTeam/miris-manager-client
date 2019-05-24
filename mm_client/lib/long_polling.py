@@ -14,7 +14,7 @@ import traceback
 
 from .signing import check_signature
 
-logger = logging.getLogger('mm_client.long_polling')
+logger = logging.getLogger('mm_client.lib.long_polling')
 
 
 class LongPollingManager():
@@ -29,7 +29,7 @@ class LongPollingManager():
         # Check if systemd-notify should be called
         self.run_systemd_notify = self.client.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
-        logger.info('Miris Manager server is %s.', self.client.conf['URL'])
+        logger.info('Miris Manager server is %s.', self.client.conf['SERVER_URL'])
         logger.info('Starting connection loop using url: %s.', self.client.get_url_info('LONG_POLLING'))
         self.loop_running = True
 

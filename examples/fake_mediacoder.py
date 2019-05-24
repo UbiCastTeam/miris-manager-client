@@ -13,7 +13,6 @@ logger = logging.getLogger('fake_mediacoder')
 
 class FakeMediaCoder(MirisManagerClient):
     DEFAULT_CONF = {
-        'URL': 'http://localhost:9000',
         'CAPABILITIES': ['record', 'network_record', 'web_control', 'screenshot'],
     }
     PROFILES = {'main': {'has_password': False, 'can_live': False, 'name': 'main', 'label': 'Main', 'type': 'recorder'}}
