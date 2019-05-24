@@ -3,9 +3,10 @@
 '''
 Fake MediaCoder client for tests.
 '''
-import os
 import json
 import logging
+import os
+import sys
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('fake_mediacoder')
@@ -40,7 +41,8 @@ class FakeMediaCoder(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    client = FakeMediaCoder()
+    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
+    client = FakeMediaCoder(local_conf)
     client.update_capabilities()
     client.set_status(status='ready', status_message='Ready to record', remaining_space='auto')
     try:

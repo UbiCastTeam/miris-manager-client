@@ -6,6 +6,7 @@ This script is intended to control a recorder.
 '''
 import json
 import logging
+import sys
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('recorder_controller')
@@ -45,7 +46,8 @@ class RecorderController(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    client = RecorderController()
+    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
+    client = RecorderController(local_conf)
     try:
         client.long_polling_loop()
     except KeyboardInterrupt:

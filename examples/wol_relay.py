@@ -7,6 +7,7 @@ This script is intended to create devices acting as wake on lan relay and video 
 import logging
 import os
 import re
+import sys
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('wol_relay')
@@ -55,7 +56,8 @@ class WOLRelay(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    client = WOLRelay()
+    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
+    client = WOLRelay(local_conf)
     client.update_capabilities()
     try:
         client.long_polling_loop()

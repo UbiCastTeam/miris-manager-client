@@ -6,6 +6,7 @@ This script is intended to send screenshot and handle click requests.
 '''
 import logging
 import os
+import sys
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('screen_controller')
@@ -43,7 +44,8 @@ class ScreenController(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    client = ScreenController()
+    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
+    client = ScreenController(local_conf)
     client.update_capabilities()
     try:
         client.long_polling_loop()
