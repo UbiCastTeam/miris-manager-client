@@ -1,3 +1,6 @@
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/miris-manager-client.svg)
+![PyPI](https://img.shields.io/pypi/v/miris-manager-client.svg)
+
 # UbiCast Miris Manager client
 
 A Python3 client to use UbiCast Miris Manager remote control API.
