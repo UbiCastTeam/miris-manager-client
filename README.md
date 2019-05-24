@@ -13,7 +13,7 @@ For production use, it is recommended to use the branch named "stable". The "mas
 ## Client class instantiation
 
 The client class (`mm_client`.`client`.`MirisManagerClient`) takes two arguments:
-* `local_conf`: This argument can be either a dict, a path (`str` object) or a unix user (`unix:msuser` for example). The default value is `None`, which means no configuration.
+* `local_conf`: This argument can be either a dict or a path (`str` object). The default value is `None`, which means no configuration.
 * `setup_logging`: This argument must be a boolean. If set to `True`, the logging to console will be configured. The default value is `True`.
 
 
