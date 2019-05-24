@@ -6,7 +6,7 @@ This script is intended to control a recorder.
 '''
 import json
 import logging
-from mm_client import MirisManagerClient
+from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('recorder_controller')
 

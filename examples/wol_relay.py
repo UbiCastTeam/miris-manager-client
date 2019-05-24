@@ -7,7 +7,7 @@ This script is intended to create devices acting as wake on lan relay and video 
 import logging
 import os
 import re
-from mm_client import MirisManagerClient
+from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('wol_relay')
 

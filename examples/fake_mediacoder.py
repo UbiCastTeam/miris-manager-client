@@ -6,7 +6,7 @@ Fake MediaCoder client for tests.
 import os
 import json
 import logging
-from mm_client import MirisManagerClient
+from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('fake_mediacoder')
 

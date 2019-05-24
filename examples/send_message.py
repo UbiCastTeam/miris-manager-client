@@ -4,7 +4,7 @@
 Script to send a message
 '''
 import datetime
-from mm_client import MirisManagerClient
+from mm_client.client import MirisManagerClient
 
 
 if __name__ == '__main__':

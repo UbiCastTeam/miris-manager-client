@@ -6,7 +6,7 @@ This script is intended to send screenshot and handle click requests.
 '''
 import logging
 import os
-from mm_client import MirisManagerClient
+from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('screen_controller')
 
