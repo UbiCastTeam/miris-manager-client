@@ -70,7 +70,7 @@ class MirisManagerClient():
     def _register(self):
         if self.conf.get('API_KEY'):
             return
-        logger.info('No API key in configuration "%s", requesting system registration...' % self.LOCAL_CONF)
+        logger.info('No API key in configuration, requesting system registration...')
         data = info_lib.get_host_info(self.conf['SERVER_URL'])
         data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
         req = requests.post(
