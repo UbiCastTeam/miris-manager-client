@@ -43,6 +43,7 @@ BASE_CONF = {
         'SET_COMMAND_STATUS': {'method': 'post', 'url': '/api/v3/fleet/control/set-command-status/'},
         'GET_INFO': {'method': 'get', 'url': '/api/v3/fleet/systems/get-info/'},
         'SET_INFO': {'method': 'post', 'url': '/api/v3/fleet/systems/set-info/'},
+        'GET_STATUS': {'method': 'get', 'url': '/api/v3/fleet/systems/get-status/'},
         'SET_STATUS': {'method': 'post', 'url': '/api/v3/fleet/systems/set-status/'},
         'SET_SCREENSHOT': {'method': 'post', 'url': '/api/v3/fleet/systems/set-screenshot/'},
         'REGISTER_SYSTEM': {'method': 'post', 'url': '/api/v3/fleet/systems/register/'},
