@@ -5,10 +5,9 @@ Miris Manager client library
 This module is not intended to be used directly, only the client class should be used.
 '''
 import logging
-import re
 import socket
-import subprocess
 import uuid
+import os
 
 logger = logging.getLogger('mm_client.lib.info')
 
@@ -45,20 +44,14 @@ def get_host_info(url):
     )
 
 
+def get_free_space_bytes(path):
+    statvfs = os.statvfs(path)
+    free = statvfs.f_frsize * statvfs.f_bavail
+    return free
+
+
 def get_remaining_space():
-    # return remaining space in /home
-    p = subprocess.Popen('df -x fuse.gvfs-fuse-daemon 2>/dev/null', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    out, err = p.communicate()
-    out = out.decode('utf-8') if out else ''
-    remaining_space = None
-    for line in out.split('\n'):
-        if line.endswith(' /home') or not remaining_space and line.endswith(' /'):
-            line = re.sub(r' +', ' ', line)
-            splitted = line.split(' ')
-            if len(splitted) == 6:
-                filesystem, size, used, available, used_percent, mount_point = splitted
-                try:
-                    remaining_space = int(int(available) / 1000)
-                except ValueError:
-                    pass
-    return remaining_space
+    '''
+    Return remaining space in /home in MB
+    '''
+    return int(get_free_space_bytes('/home') / (1024 * 1024))
