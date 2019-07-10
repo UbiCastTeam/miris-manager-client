@@ -72,6 +72,7 @@ class LongPollingManager():
                 try:
                     result = self.process_long_polling(response)
                 except Exception as e:
+                    success = False
                     logger.error('Failed to process response: %s\n%s', e, traceback.format_exc())
                     self.client.set_command_status(uid, 'FAILED', str(e))
                 else:

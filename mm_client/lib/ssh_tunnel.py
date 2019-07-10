@@ -64,7 +64,7 @@ class SSHTunnelManager():
             dict(id='denied', pattern=re.compile(r'Permission denied \(publickey,password\).\r\n')),
             dict(id='closed', pattern=re.compile(r'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
         ]
-        self.loop_ssh_tunnel = True
+        self.loop_ssh_tunnel = False
         self.process = None
         self.stdout_queue = None
         self.stdout_reader = None
@@ -79,7 +79,7 @@ class SSHTunnelManager():
     def establish_tunnel(self):
         public_key = None
         response = None
-        logging.debug('establishing new tunnel')
+        logging.debug('establishing new tunnel with %s' % self.client.conf['SERVER_URL'])
         self._try_closing_process()
         self._stop_reader()
         try:
@@ -87,6 +87,9 @@ class SSHTunnelManager():
             public_key = get_ssh_public_key()
             response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         except Exception as e:
+            self.update_ssh_state('state', 'prepare tunnel failed')
+            self.update_ssh_state('port', 0)
+            self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
             logger.error('Cannot prepare ssh tunnel : %s' % str(e))
             return
         self.update_ssh_state('port', response['port'])
@@ -164,6 +167,10 @@ class SSHTunnelManager():
 
     def tunnel_loop(self):
         check_delay = 10
+        self.loop_ssh_tunnel = True
+        self.update_ssh_state('state', 'loading')
+        self.update_ssh_state('port', 0)
+        self.update_ssh_state('command', ['Load', self.client.conf['SERVER_URL']])
         while self.loop_ssh_tunnel:
             need_retry = False
             if self.process:
