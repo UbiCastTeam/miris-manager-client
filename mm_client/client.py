@@ -129,7 +129,12 @@ class MirisManagerClient():
         )
         response = req.text.strip()
         if req.status_code != 200:
-            raise Exception('Request failed with status code %s:\n%s.' % (req.status_code, response[:200]))
+            try:
+                j = json.loads(response)
+                error = j['error']
+            except Exception:
+                error = 'Request failed with status code %s:\n%s.' % (req.status_code, response[:200])
+            raise Exception(error)
         if response:
             response = json.loads(response)
         return response
