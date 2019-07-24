@@ -92,18 +92,22 @@ class SSHTunnelManager():
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
             logger.error('Cannot prepare ssh tunnel : %s' % str(e))
             return
-        self.update_ssh_state('port', response['port'])
-        target = self.client.conf['SERVER_URL'].split('://')[-1]
-        if target.endswith('/'):
-            target = target[:-1]
-        self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-        logger.debug('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
-        self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
-        self.stdout_queue = multiprocessing.Queue()
-        self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
-        self.stdout_reader.start()
-        self.stderr_reader = AsynchronousFileReader(self.process.stderr, self.stdout_queue)
-        self.stderr_reader.start()
+        port = response.get('port')
+        if port is not None:
+            self.update_ssh_state('port', response['port'])
+            target = self.client.conf['SERVER_URL'].split('://')[-1]
+            if target.endswith('/'):
+                target = target[:-1]
+            self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
+            logger.debug('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
+            self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+            self.stdout_queue = multiprocessing.Queue()
+            self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
+            self.stdout_reader.start()
+            self.stderr_reader = AsynchronousFileReader(self.process.stderr, self.stdout_queue)
+            self.stderr_reader.start()
+        else:
+            logger.debug('No port provided, not starting ssh tunnel')
 
     def update_ssh_state(self, key, value):
         if self.ssh_tunnel_state.get(key) is not None:
