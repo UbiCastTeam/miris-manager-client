@@ -135,39 +135,25 @@ class SSHTunnelManager():
                 logger.error('SSH tunnel has not terminate try to kill')
                 os.system('kill -- -$(ps hopgid %s | sed \'s/^ *//g\')' % self.process.pid)
                 self.process.kill()
+                logger.debug('SSH tunnel killed')
             else:
-                logger.warning('SSH tunnel terminated')
+                logger.debug('SSH tunnel terminated')
 
     def _stop_reader(self):
         if self.stdout_reader:
             logger.debug('Wait for stdout process')
-            self.stdout_reader.terminate()
-            timeout = 5
-            while self.stdout_reader.is_alive() and timeout:
-                timeout -= 1
-                time.sleep(1)
-            if not timeout:
-                os.kill(self.stdout_reader.pid, signal.SIGKILL)
-                logger.warning('SSH stdout_reader killed')
-            else:
-                logger.warning('SSH stdout_reader terminated')
+            os.kill(self.stdout_reader.pid, signal.SIGKILL)
+            logger.debug('SSH stdout_reader killed')
+
         if self.stderr_reader:
             logger.debug('Wait for stderr process')
-            self.stderr_reader.terminate()
-            timeout = 5
-            while self.stderr_reader.is_alive() and timeout:
-                timeout -= 1
-                time.sleep(1)
-            if not timeout:
-                os.kill(self.stderr_reader.pid, signal.SIGKILL)
-                logger.warning('SSH stderr_reader killed')
-            else:
-                logger.warning('SSH stderr_reader terminated')
+            os.kill(self.stderr_reader.pid, signal.SIGKILL)
+            logger.debug('SSH stderr_reader killed')
         if self.stdout_queue:
             logger.debug('Wait for ssh queue')
             self.stdout_queue.close()
             self.stdout_queue.cancel_join_thread()
-            logger.warning('SSH queue closed')
+            logger.debug('SSH queue closed')
 
     def tunnel_loop(self, thread_event=None):
         check_delay = 10
