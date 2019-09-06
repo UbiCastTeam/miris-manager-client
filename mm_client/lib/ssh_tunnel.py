@@ -142,12 +142,18 @@ class SSHTunnelManager():
     def _stop_reader(self):
         if self.stdout_reader:
             logger.debug('Wait for stdout process')
-            os.kill(self.stdout_reader.pid, signal.SIGKILL)
+            try:
+                os.kill(self.stdout_reader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             logger.debug('SSH stdout_reader killed')
 
         if self.stderr_reader:
             logger.debug('Wait for stderr process')
-            os.kill(self.stderr_reader.pid, signal.SIGKILL)
+            try:
+                os.kill(self.stderr_reader.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
             logger.debug('SSH stderr_reader killed')
         if self.stdout_queue:
             logger.debug('Wait for ssh queue')
@@ -167,31 +173,38 @@ class SSHTunnelManager():
                 return_code = self.process.poll()
                 if return_code is not None:
                     ssh_logs = ''
-                    while not self.stdout_queue.empty():
-                        ssh_logs += self.stdout_queue.get_nowait()
+                    try:
+                        while not self.stdout_queue.empty():
+                            ssh_logs += self.stdout_queue.get_nowait()
+                    except OSError as e:
+                        ssh_logs = e
                     self.update_ssh_state('state', 'error')
                     self.update_ssh_state('last_tunnel_info', ssh_logs)
                     logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
                     need_retry = True
                 else:
-                    while not self.stdout_queue.empty():
-                        ssh_stdout = self.stdout_queue.get_nowait()
-                        id_founded = None
-                        for pattern_dict in self.pattern_list:
-                            if pattern_dict['pattern'].match(ssh_stdout):
-                                id_founded = pattern_dict['id']
-                                self.update_ssh_state('state', id_founded)
-                                self.update_ssh_state('last_tunnel_info', ssh_stdout)
+                    try:
+                        while not self.stdout_queue.empty():
+                            ssh_stdout = self.stdout_queue.get_nowait()
+                            id_founded = None
+                            for pattern_dict in self.pattern_list:
+                                if pattern_dict['pattern'].match(ssh_stdout):
+                                    id_founded = pattern_dict['id']
+                                    self.update_ssh_state('state', id_founded)
+                                    self.update_ssh_state('last_tunnel_info', ssh_stdout)
+                                    break
+                            if not id_founded:
+                                if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
+                                    logger.debug(ssh_stdout)
+                                else:
+                                    logger.warning(ssh_stdout)
+                            elif id_founded not in ['connecting', 'connected', 'authenticated', 'running']:
+                                logger.error('Need to retry tunnel because ssh command failed in stdout %s' % id_founded)
+                                need_retry = True
                                 break
-                        if not id_founded:
-                            if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
-                                logger.debug(ssh_stdout)
-                            else:
-                                logger.warning(ssh_stdout)
-                        elif id_founded not in ['connecting', 'connected', 'authenticated', 'running']:
-                            logger.error('Need to retry tunnel because ssh command failed in stdout %s' % id_founded)
-                            need_retry = True
-                            break
+                    except OSError as e:
+                        logger.error(e)
+                        need_retry = True
             else:
                 logger.debug('Need to retry tunnel because no process')
                 need_retry = True
