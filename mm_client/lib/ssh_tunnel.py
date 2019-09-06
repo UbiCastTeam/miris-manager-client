@@ -169,7 +169,7 @@ class SSHTunnelManager():
             self.stdout_queue.cancel_join_thread()
             logger.warning('SSH queue closed')
 
-    def tunnel_loop(self):
+    def tunnel_loop(self, thread_event=None):
         check_delay = 10
         self.loop_ssh_tunnel = True
         self.update_ssh_state('state', 'loading')
@@ -214,8 +214,10 @@ class SSHTunnelManager():
                     self.establish_tunnel()
                 except Exception as e:
                     logger.error('error while establishing tunnel %s' % str(e))
-
-            time.sleep(check_delay)
+            if thread_event:
+                thread_event.wait(check_delay)
+            else:
+                time.sleep(check_delay)
 
 
 class AsynchronousFileReader(multiprocessing.Process):
