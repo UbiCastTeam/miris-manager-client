@@ -177,7 +177,7 @@ class SSHTunnelManager():
                         while not self.stdout_queue.empty():
                             ssh_logs += self.stdout_queue.get_nowait()
                     except OSError as e:
-                        ssh_logs = e
+                        ssh_logs = str(e)
                     self.update_ssh_state('state', 'error')
                     self.update_ssh_state('last_tunnel_info', ssh_logs)
                     logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
