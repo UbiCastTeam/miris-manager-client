@@ -29,6 +29,7 @@ class MirisManagerClient():
             log_format = '%(asctime)s %(name)s %(levelname)s %(message)s'
             logging.basicConfig(level=logging.INFO, format=log_format)
         # Read conf file
+        self.conf_checked = False
         self.conf = self.load_conf(local_conf)
         # Configure logging
         if setup_logging:
