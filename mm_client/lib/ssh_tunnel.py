@@ -117,9 +117,11 @@ class SSHTunnelManager():
         if self.status_callback:
             self.status_callback(self.ssh_tunnel_state)
 
-    def close_tunnel(self):
-        logger.warning('Close ssh tunnel asked')
+    def close_tunnel(self, thread_event=None):
+        logger.debug('Close ssh tunnel asked')
         self.loop_ssh_tunnel = False
+        if thread_event:
+            thread_event.set()
         self._stop_reader()
         self._try_closing_process()
 
