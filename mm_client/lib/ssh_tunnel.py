@@ -79,11 +79,11 @@ class SSHTunnelManager():
     def establish_tunnel(self):
         public_key = None
         response = None
-        logging.debug('establishing new tunnel with %s' % self.client.conf['SERVER_URL'])
+        logger.debug('establishing new tunnel with %s' % self.client.conf['SERVER_URL'])
         self._try_closing_process()
         self._stop_reader()
         try:
-            logging.debug('prepare tunnel')
+            logger.debug('prepare tunnel')
             public_key = get_ssh_public_key()
             response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         except Exception as e:
