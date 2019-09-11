@@ -140,6 +140,7 @@ class SSHTunnelManager():
                 logger.debug('SSH tunnel killed')
             else:
                 logger.debug('SSH tunnel terminated')
+            self.process = None
 
     def _stop_reader(self):
         if self.stdout_reader:

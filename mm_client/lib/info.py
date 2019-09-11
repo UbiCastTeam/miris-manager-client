@@ -29,7 +29,11 @@ def get_host_info(url):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     if host.endswith('/'):
         host = host[:-1]
-    s.connect((host, port))
+    try:
+        s.connect((host, port))
+    except Exception as e:
+        s.close()
+        raise e
     local_ip = s.getsockname()[0]
     s.close()
     logger.debug('Local IP is %s.', local_ip)
