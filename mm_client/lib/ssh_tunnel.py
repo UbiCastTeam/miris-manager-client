@@ -172,7 +172,7 @@ class SSHTunnelManager():
             logger.debug('SSH queue closed')
 
     def tunnel_loop(self, thread_event=None):
-        check_delay = 10
+        check_delay = 1
         self.loop_ssh_tunnel = True
         self.update_ssh_state('state', 'loading')
         self.update_ssh_state('port', 0)
@@ -243,7 +243,7 @@ class AsynchronousFileReader(multiprocessing.Process):
             if line:
                 self._queue.put(line)
                 continue
-            time.sleep(2)
+            time.sleep(.5)
 
     def eof(self):
         return not self.is_alive() and self._queue.empty()
