@@ -42,8 +42,13 @@ def get_ssh_public_key():
 
 def prepare_ssh_command(target, port):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
-    command = ['ssh', '-i', ssh_key_path, '-o', 'IdentitiesOnly yes', '-nvNT', '-o', 'NumberOfPasswordPrompts 0', '-o' 'CheckHostIP no', '-o', 'StrictHostKeyChecking no', '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
-    logger.info('Running following command to establish SSH tunnel: %s', command)
+    command = ['ssh', '-i', ssh_key_path,
+               '-o=IdentitiesOnly yes', '-nvNT',
+               '-o=NumberOfPasswordPrompts 0',
+               '-o=CheckHostIP no',
+               '-o=StrictHostKeyChecking no',
+               '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
+    logger.info('Will use the following command to establish SSH tunnel: %s', ' '.join(command))
     return command
 
 
@@ -80,8 +85,8 @@ class SSHTunnelManager():
         public_key = None
         response = None
         logger.debug('establishing new tunnel with %s' % self.client.conf['SERVER_URL'])
-        self._try_closing_process()
         self._stop_reader()
+        self._try_closing_process()
         try:
             logger.debug('prepare tunnel')
             public_key = get_ssh_public_key()
@@ -99,7 +104,7 @@ class SSHTunnelManager():
             if target.endswith('/'):
                 target = target[:-1]
             self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-            logger.debug('Starting SSH with command:\n    %s', self.ssh_tunnel_state['command'])
+            logger.debug('Starting SSH with command:\n    %s', ' '.join(self.ssh_tunnel_state['command']))
             self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
             self.stdout_queue = multiprocessing.Queue()
             self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
@@ -172,7 +177,7 @@ class SSHTunnelManager():
         self.update_ssh_state('command', ['Load', self.client.conf['SERVER_URL']])
         while self.loop_ssh_tunnel:
             need_retry = False
-            if self.process:
+            if self.process is not None:
                 return_code = self.process.poll()
                 if return_code is not None:
                     ssh_logs = ''
@@ -219,7 +224,7 @@ class SSHTunnelManager():
                 try:
                     self.establish_tunnel()
                 except Exception as e:
-                    logger.error('error while establishing tunnel %s' % str(e))
+                    logger.error('error while establishing tunnel %s', e)
 
 
 class AsynchronousFileReader(multiprocessing.Process):
