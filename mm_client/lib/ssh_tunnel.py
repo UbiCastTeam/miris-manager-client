@@ -216,15 +216,15 @@ class SSHTunnelManager():
             else:
                 logger.debug('Need to retry tunnel because no process')
                 need_retry = True
-            if thread_event:
-                thread_event.wait(check_delay)
-            else:
-                time.sleep(check_delay)
             if need_retry:
                 try:
                     self.establish_tunnel()
                 except Exception as e:
                     logger.error('error while establishing tunnel %s', e)
+            if thread_event:
+                thread_event.wait(check_delay)
+            else:
+                time.sleep(check_delay)
 
 
 class AsynchronousFileReader(multiprocessing.Process):
