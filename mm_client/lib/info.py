@@ -15,9 +15,7 @@ logger = logging.getLogger('mm_client.lib.info')
 def get_host_info(url):
     # get hostname
     hostname = socket.gethostname()
-    logger.debug('Hostname is %s.', hostname)
     # get local IP address
-    logger.debug('check local ip of %s' % url)
     host = url.split('://')[-1]
     if ':' in host:
         host, port = host.split(':')
@@ -36,16 +34,16 @@ def get_host_info(url):
         raise e
     local_ip = s.getsockname()[0]
     s.close()
-    logger.debug('Local IP is %s.', local_ip)
     # get MAC address
     node = uuid.getnode()
     mac = ':'.join(('%012x' % node)[i:i + 2] for i in range(0, 12, 2))
-    logger.debug('Client mac address is: %s.', mac)
-    return dict(
+    info = dict(
         hostname=hostname,
         local_ip=local_ip,
         mac=mac,
     )
+    logger.debug('Client info is %s' % info)
+    return info
 
 
 def get_free_space_bytes(path):

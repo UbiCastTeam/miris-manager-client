@@ -25,7 +25,7 @@ def get_ssh_public_key():
     if os.path.exists(ssh_key_path):
         if not os.path.exists(ssh_key_path + '.pub'):
             raise Exception('Weird state detetected: "%s" exists but not "%s" !' % (ssh_key_path, ssh_key_path + '.pub'))
-        logger.info('Using existing SSH key: "%s".', ssh_key_path)
+        logger.debug('Using existing SSH key: "%s".', ssh_key_path)
     else:
         logger.info('Creating new SSH key: "%s".', ssh_key_path)
         p = subprocess.Popen(['ssh-keygen', '-b', '4096', '-f', ssh_key_path, '-N', ''], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -43,12 +43,11 @@ def get_ssh_public_key():
 def prepare_ssh_command(target, port):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
     command = ['ssh', '-i', ssh_key_path,
-               '-o=IdentitiesOnly yes', '-nvNT',
-               '-o=NumberOfPasswordPrompts 0',
-               '-o=CheckHostIP no',
-               '-o=StrictHostKeyChecking no',
+               '-o IdentitiesOnly=yes', '-nvNT',
+               '-o NumberOfPasswordPrompts=0',
+               '-o CheckHostIP=no',
+               '-o StrictHostKeyChecking=no',
                '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
-    logger.info('Will use the following command to establish SSH tunnel: %s', ' '.join(command))
     return command
 
 
@@ -84,11 +83,11 @@ class SSHTunnelManager():
     def establish_tunnel(self):
         public_key = None
         response = None
-        logger.debug('establishing new tunnel with %s' % self.client.conf['SERVER_URL'])
+        logger.debug('Establishing new tunnel to %s' % self.client.conf['SERVER_URL'])
         self._stop_reader()
         self._try_closing_process()
         try:
-            logger.debug('prepare tunnel')
+            logger.debug('Prepare tunnel')
             public_key = get_ssh_public_key()
             response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         except Exception as e:
@@ -104,7 +103,7 @@ class SSHTunnelManager():
             if target.endswith('/'):
                 target = target[:-1]
             self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-            logger.debug('Starting SSH with command:\n    %s', ' '.join(self.ssh_tunnel_state['command']))
+            logger.info('Starting SSH with command:\n    %s', ' '.join(self.ssh_tunnel_state['command']))
             self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
             self.stdout_queue = multiprocessing.Queue()
             self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
@@ -115,6 +114,8 @@ class SSHTunnelManager():
             logger.debug('No port provided, not starting ssh tunnel')
 
     def update_ssh_state(self, key, value):
+        if key == 'state' and self.ssh_tunnel_state.get('state') != value:
+            logger.info('SSH state changed to %s' % value)
         if self.ssh_tunnel_state.get(key) is not None:
             self.ssh_tunnel_state[key] = value
         else:
@@ -132,24 +133,25 @@ class SSHTunnelManager():
 
     def _try_closing_process(self):
         if self.process:
-            logger.debug('Wait for ssh process')
-            self.process.terminate()
             timeout = 5
-            while self.process.poll() is None and timeout:
+            logger.debug('Waiting %ss for ssh process to terminate' % timeout)
+            self.process.terminate()
+            while self.process.poll() is None and timeout != 0:
                 timeout -= 1
                 time.sleep(1)
-            if not timeout:
-                logger.error('SSH tunnel has not terminate try to kill')
-                os.system('kill -- -$(ps hopgid %s | sed \'s/^ *//g\')' % self.process.pid)
-                self.process.kill()
-                logger.debug('SSH tunnel killed')
+            if timeout == 0:
+                logger.warning('SSH tunnel has not terminated, trying to kill it')
+                pgrp = os.getpgid(self.process.pid)
+                os.killpg(pgrp, signal.SIGINT)
+                #self.process.kill()
+                logger.warning('SSH tunnel killed')
             else:
-                logger.debug('SSH tunnel terminated')
+                logger.info('SSH tunnel subprocess terminated')
             self.process = None
 
     def _stop_reader(self):
         if self.stdout_reader:
-            logger.debug('Wait for stdout process')
+            logger.debug('Waiting for stdout_reader subprocess to terminate')
             try:
                 os.kill(self.stdout_reader.pid, signal.SIGKILL)
             except ProcessLookupError:
@@ -157,14 +159,14 @@ class SSHTunnelManager():
             logger.debug('SSH stdout_reader killed')
 
         if self.stderr_reader:
-            logger.debug('Wait for stderr process')
+            logger.debug('Wait for stderr_reader subprocess to terminate')
             try:
                 os.kill(self.stderr_reader.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             logger.debug('SSH stderr_reader killed')
         if self.stdout_queue:
-            logger.debug('Wait for ssh queue')
+            logger.debug('Waiting for ssh queue to close')
             self.stdout_queue.close()
             self.stdout_queue.cancel_join_thread()
             logger.debug('SSH queue closed')
@@ -180,6 +182,7 @@ class SSHTunnelManager():
             if self.process is not None:
                 return_code = self.process.poll()
                 if return_code is not None:
+                    logger.debug('SSH process has terminated')
                     ssh_logs = ''
                     try:
                         while not self.stdout_queue.empty():
@@ -188,42 +191,43 @@ class SSHTunnelManager():
                         ssh_logs = str(e)
                     self.update_ssh_state('state', 'error')
                     self.update_ssh_state('last_tunnel_info', ssh_logs)
-                    logger.error('SSH tunnel process error. Return: %s' % ssh_logs)
+                    logger.error('SSH tunnel process has terminated with: %s' % ssh_logs)
                     need_retry = True
                 else:
+                    # process is still alive
                     try:
                         while not self.stdout_queue.empty():
                             ssh_stdout = self.stdout_queue.get_nowait()
-                            id_founded = None
+                            pattern_id_found = None
                             for pattern_dict in self.pattern_list:
                                 if pattern_dict['pattern'].match(ssh_stdout):
-                                    id_founded = pattern_dict['id']
-                                    self.update_ssh_state('state', id_founded)
+                                    pattern_id_found = pattern_dict['id']
+                                    self.update_ssh_state('state', pattern_id_found)
                                     self.update_ssh_state('last_tunnel_info', ssh_stdout)
                                     break
-                            if not id_founded:
+                            if not pattern_id_found:
                                 if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
-                                    logger.debug(ssh_stdout)
+                                    #logger.debug('[SSH] %s' % ssh_stdout)
+                                    pass
                                 else:
-                                    logger.warning(ssh_stdout)
-                            elif id_founded not in ['connecting', 'connected', 'authenticated', 'running']:
-                                logger.error('Need to retry tunnel because ssh command failed in stdout %s' % id_founded)
+                                    logger.warning('[SSH] %s' % ssh_stdout)
+                            elif pattern_id_found not in ['connecting', 'connected', 'authenticated', 'running']:
+                                logger.error('Need to retry tunnel because ssh command failed in stdout %s' % pattern_id_found)
                                 need_retry = True
                                 break
                     except OSError as e:
                         logger.error(e)
                         need_retry = True
-            else:
-                logger.debug('Need to retry tunnel because no process')
-                need_retry = True
-            if need_retry:
+            if need_retry or self.process is None:
                 try:
                     self.establish_tunnel()
                 except Exception as e:
                     logger.error('error while establishing tunnel %s', e)
             if thread_event:
+                # blocking unless thread_event.set() is called
                 thread_event.wait(check_delay)
             else:
+                # use a normal sleep if not running in a thread
                 time.sleep(check_delay)
 
 

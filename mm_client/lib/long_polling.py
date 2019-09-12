@@ -29,13 +29,12 @@ class LongPollingManager():
         # Check if systemd-notify should be called
         self.run_systemd_notify = self.client.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
-        logger.info('Miris Manager server is %s.', self.client.conf['SERVER_URL'])
-        logger.info('Starting connection loop using url: %s.', self.client.get_url_info('LONG_POLLING'))
+        logger.info('Starting long polling to %s' % self.client.conf['SERVER_URL'])
         self.loop_running = True
 
         def exit_handler(signum, frame):
             self.loop_running = False
-            logger.warning('Loop as been interrupted')
+            logger.info('Long polling loop stopped')
             sys.exit(1)
 
         signal.signal(signal.SIGINT, exit_handler)
