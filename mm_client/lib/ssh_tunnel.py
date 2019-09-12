@@ -222,6 +222,9 @@ class SSHTunnelManager():
             if need_retry or self.process is None:
                 try:
                     self.establish_tunnel()
+                    if need_retry:
+                        # avoid spamming the server
+                        thread_event.wait(10)
                 except Exception as e:
                     logger.error('error while establishing tunnel %s', e)
             if thread_event:
