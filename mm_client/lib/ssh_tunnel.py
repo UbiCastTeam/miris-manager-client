@@ -111,6 +111,7 @@ class SSHTunnelManager():
                 self.stdout_reader.start()
                 self.stderr_reader = AsynchronousFileReader(self.process.stderr, self.stdout_queue)
                 self.stderr_reader.start()
+                return True
         else:
             logger.debug('No port provided, not starting ssh tunnel')
 
@@ -221,8 +222,8 @@ class SSHTunnelManager():
                         need_retry = True
             if need_retry or self.process is None:
                 try:
-                    self.establish_tunnel()
-                    if need_retry:
+                    success = self.establish_tunnel()
+                    if need_retry or not success:
                         # avoid spamming the server
                         thread_event.wait(10)
                 except Exception as e:
