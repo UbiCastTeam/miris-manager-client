@@ -40,14 +40,18 @@ def get_ssh_public_key():
     return public_key
 
 
-def prepare_ssh_command(target, port):
+def prepare_ssh_command(host, ssh_user, ssh_port, remote_port):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
-    command = ['ssh', '-i', ssh_key_path,
-               '-o IdentitiesOnly=yes', '-nvNT',
-               '-o NumberOfPasswordPrompts=0',
-               '-o CheckHostIP=no',
-               '-o StrictHostKeyChecking=no',
-               '-R', '%s:127.0.0.1:443' % port, 'skyreach@%s' % target]
+    command = ['ssh',
+               '-i', ssh_key_path,
+               '-nvNT',
+               '-o', 'IdentitiesOnly=yes',
+               '-o', 'NumberOfPasswordPrompts=0',
+               '-o', 'CheckHostIP=no',
+               '-o', 'StrictHostKeyChecking=no',
+               '-R', '%s:127.0.0.1:443' % remote_port,
+               '-p', str(ssh_port),
+               '%s@%s' % (ssh_user, host)]
     return command
 
 
@@ -74,6 +78,8 @@ class SSHTunnelManager():
         self.stdout_reader = None
         self.stderr_reader = None
         self.ssh_tunnel_state = {
+            'ssh_user': 'skyreach',
+            'ssh_port': 22,
             'port': 0,
             'state': 'Not running',
             'command': '',
@@ -96,16 +102,23 @@ class SSHTunnelManager():
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
             logger.error('Cannot prepare ssh tunnel : %s' % str(e))
             return
+        ssh_user = response.get('ssh_user')
+        if ssh_user and ssh_user != self.ssh_tunnel_state['ssh_user']:
+            self.update_ssh_state('ssh_user', response['ssh_user'])
+        ssh_port = response.get('ssh_port')
+        if ssh_port and ssh_port != self.ssh_tunnel_state['ssh_port']:
+            self.update_ssh_state('ssh_port', response['ssh_port'])
         port = response.get('port')
         if port is not None:
             self.update_ssh_state('port', response['port'])
-            target = self.client.conf['SERVER_URL'].split('://')[-1]
-            if target.endswith('/'):
-                target = target[:-1]
-            self.update_ssh_state('command', prepare_ssh_command(target, self.ssh_tunnel_state['port']))
-            logger.info('Starting SSH with command:\n    %s', ' '.join(self.ssh_tunnel_state['command']))
+            host = self.client.conf['SERVER_URL'].split('://')[-1]
+            if host.endswith('/'):
+                host = host[:-1]
+            cmd = prepare_ssh_command(host, self.ssh_tunnel_state['ssh_user'], self.ssh_tunnel_state['ssh_port'], self.ssh_tunnel_state['port'])
+            self.update_ssh_state('command', cmd)
+            logger.info('Starting SSH with command:\n    %s', ' '.join(cmd))
             if self.loop_ssh_tunnel:
-                self.process = subprocess.Popen(self.ssh_tunnel_state['command'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+                self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
                 self.stdout_queue = multiprocessing.Queue()
                 self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
                 self.stdout_reader.start()
@@ -145,7 +158,7 @@ class SSHTunnelManager():
                 logger.warning('SSH tunnel has not terminated, trying to kill it')
                 pgrp = os.getpgid(self.process.pid)
                 os.killpg(pgrp, signal.SIGINT)
-                #self.process.kill()
+                # self.process.kill()
                 logger.warning('SSH tunnel killed')
             else:
                 logger.info('SSH tunnel subprocess terminated')
@@ -209,7 +222,7 @@ class SSHTunnelManager():
                                     break
                             if not pattern_id_found:
                                 if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
-                                    #logger.debug('[SSH] %s' % ssh_stdout)
+                                    # logger.debug('[SSH] %s' % ssh_stdout)
                                     pass
                                 else:
                                     logger.warning('[SSH] %s' % ssh_stdout)
