@@ -227,7 +227,7 @@ class SSHTunnelManager():
                                 else:
                                     logger.warning('[SSH] %s' % ssh_stdout)
                             elif pattern_id_found not in ['connecting', 'connected', 'authenticated', 'running']:
-                                logger.error('Need to retry tunnel because ssh command failed in stdout %s' % pattern_id_found)
+                                logger.error('Need to retry tunnel (ssh port: {ssh_port} remote port: {port}) because ssh command failed in stdout %s'.format(**self.ssh_tunnel_state) % pattern_id_found)
                                 need_retry = True
                                 break
                     except OSError as e:
