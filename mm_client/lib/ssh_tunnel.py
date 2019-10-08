@@ -40,7 +40,7 @@ def get_ssh_public_key():
     return public_key
 
 
-def prepare_ssh_command(host, ssh_user, ssh_port, remote_port):
+def prepare_ssh_command(host, info):
     ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
     command = ['ssh',
                '-i', ssh_key_path,
@@ -49,9 +49,10 @@ def prepare_ssh_command(host, ssh_user, ssh_port, remote_port):
                '-o', 'NumberOfPasswordPrompts=0',
                '-o', 'CheckHostIP=no',
                '-o', 'StrictHostKeyChecking=no',
-               '-R', '%s:127.0.0.1:443' % remote_port,
-               '-p', str(ssh_port),
-               '%s@%s' % (ssh_user, host)]
+               '-R', '%s:127.0.0.1:443' % info['control_port'],
+               '-R', '%s:127.0.0.1:22' % info['maintenance_port'],
+               '-p', str(info['ssh_port']),
+               '%s@%s' % (info['ssh_user'], host)]
     return command
 
 
@@ -80,7 +81,8 @@ class SSHTunnelManager():
         self.ssh_tunnel_state = {
             'ssh_user': 'skyreach',
             'ssh_port': 22,
-            'port': 0,
+            'control_port': 0,
+            'maintenance_port': 0,
             'state': 'Not running',
             'command': '',
             'last_tunnel_info': ''
@@ -98,7 +100,8 @@ class SSHTunnelManager():
             response = self.client.api_request('PREPARE_TUNNEL', data=dict(public_key=public_key))
         except Exception as e:
             self.update_ssh_state('state', 'prepare tunnel failed')
-            self.update_ssh_state('port', 0)
+            self.update_ssh_state('control_port', 0)
+            self.update_ssh_state('maintenance_port', 0)
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
             logger.error('Cannot prepare ssh tunnel : %s' % str(e))
             return
@@ -108,13 +111,16 @@ class SSHTunnelManager():
         ssh_port = response.get('ssh_port')
         if ssh_port and ssh_port != self.ssh_tunnel_state['ssh_port']:
             self.update_ssh_state('ssh_port', response['ssh_port'])
-        port = response.get('port')
+        maintenance_port = response.get('maintenance_port')
+        if maintenance_port and maintenance_port != self.ssh_tunnel_state['maintenance_port']:
+            self.update_ssh_state('maintenance_port', response['maintenance_port'])
+        port = response.get('control_port') or response.get('port')
         if port is not None:
-            self.update_ssh_state('port', response['port'])
+            self.update_ssh_state('control_port', port)
             host = self.client.conf['SERVER_URL'].split('://')[-1]
             if host.endswith('/'):
                 host = host[:-1]
-            cmd = prepare_ssh_command(host, self.ssh_tunnel_state['ssh_user'], self.ssh_tunnel_state['ssh_port'], self.ssh_tunnel_state['port'])
+            cmd = prepare_ssh_command(host, self.ssh_tunnel_state)
             self.update_ssh_state('command', cmd)
             logger.info('Starting SSH with command:\n    %s', ' '.join(cmd))
             if self.loop_ssh_tunnel:
@@ -126,7 +132,7 @@ class SSHTunnelManager():
                 self.stderr_reader.start()
                 return True
         else:
-            logger.debug('No port provided, not starting ssh tunnel')
+            logger.debug('No control port provided, not starting ssh tunnel')
 
     def update_ssh_state(self, key, value):
         if key == 'state' and self.ssh_tunnel_state.get('state') != value:
@@ -190,7 +196,8 @@ class SSHTunnelManager():
         check_delay = 1
         self.loop_ssh_tunnel = True
         self.update_ssh_state('state', 'loading')
-        self.update_ssh_state('port', 0)
+        self.update_ssh_state('control_port', 0)
+        self.update_ssh_state('maintenance_port', 0)
         self.update_ssh_state('command', ['Load', self.client.conf['SERVER_URL']])
         while self.loop_ssh_tunnel:
             need_retry = False
@@ -227,7 +234,7 @@ class SSHTunnelManager():
                                 else:
                                     logger.warning('[SSH] %s' % ssh_stdout)
                             elif pattern_id_found not in ['connecting', 'connected', 'authenticated', 'running']:
-                                logger.error('Need to retry tunnel (ssh port: {ssh_port} remote port: {port}) because ssh command failed in stdout %s'.format(**self.ssh_tunnel_state) % pattern_id_found)
+                                logger.error('Need to retry tunnel (ssh port: {ssh_port}, remote control port: {control_port}, remote maintenance port: {maintenance_port}) because ssh command failed in stdout %s'.format(**self.ssh_tunnel_state) % pattern_id_found)
                                 need_retry = True
                                 break
                     except OSError as e:
