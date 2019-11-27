@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('fake_mediacoder')
@@ -21,11 +22,13 @@ class FakeMediaCoder(MirisManagerClient):
     def handle_action(self, action, params):
         if action == 'START_RECORDING':
             logger.info('Starting recording with params %s', params)
-            self.set_status(status='recording', status_info='{"playlist": "/videos/BigBuckBunny_320x180.m3u8"}', remaining_space='auto')
+            self.set_status(status='initializing', status_message='', remaining_space='auto')
+            time.sleep(3)
+            self.set_status(status='running', status_message='', status_info='{"playlist": "/videos/BigBuckBunny_320x180.m3u8"}', remaining_space='auto')
 
         elif action == 'STOP_RECORDING':
             logger.info('Stopping recording.')
-            self.set_status(status='recorder_idle', remaining_space='auto')
+            self.set_status(status='ready', status_message='', remaining_space='auto')
 
         elif action == 'LIST_PROFILES':
             logger.info('Returning list of profiles.')
