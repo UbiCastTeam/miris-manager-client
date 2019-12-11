@@ -185,8 +185,8 @@ class MirisManagerClient():
             data['status'] = status
         if status_info is not None:
             data['status_info'] = status_info
-        if status_message is not None:
-            data['status_message'] = status_message
+        if status_message is not None or status is not None:
+            data['status_message'] = status_message or ''
         if profile is not None:
             data['profile'] = profile
         if remaining_space == 'auto':
