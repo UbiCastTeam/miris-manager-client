@@ -171,7 +171,7 @@ class SSHTunnelManager():
             self.process = None
 
     def _stop_reader(self):
-        if self.stdout_reader:
+        if self.stdout_reader is not None and self.stdout_reader.pid is not None:
             logger.debug('Waiting for stdout_reader subprocess to terminate')
             try:
                 os.kill(self.stdout_reader.pid, signal.SIGKILL)
@@ -179,13 +179,14 @@ class SSHTunnelManager():
                 pass
             logger.debug('SSH stdout_reader killed')
 
-        if self.stderr_reader:
+        if self.stderr_reader is not None and self.stderr_reader.pid is not None:
             logger.debug('Wait for stderr_reader subprocess to terminate')
             try:
                 os.kill(self.stderr_reader.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
             logger.debug('SSH stderr_reader killed')
+
         if self.stdout_queue:
             logger.debug('Waiting for ssh queue to close')
             self.stdout_queue.close()
