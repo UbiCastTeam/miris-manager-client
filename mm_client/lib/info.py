@@ -42,7 +42,7 @@ def get_host_info(url):
         local_ip=local_ip,
         mac=mac,
     )
-    logger.debug('Client info is %s' % info)
+    logger.debug('[%s] Client info is %s' % (host, info))
     return info
 
 
