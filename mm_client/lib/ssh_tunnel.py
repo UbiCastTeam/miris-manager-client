@@ -49,6 +49,7 @@ def prepare_ssh_command(host, info):
                '-o', 'NumberOfPasswordPrompts=0',
                '-o', 'CheckHostIP=no',
                '-o', 'StrictHostKeyChecking=no',
+               '-o', 'ServerAliveInterval=10',
                '-R', '%s:127.0.0.1:443' % info['control_port'],
                '-R', '%s:127.0.0.1:22' % info['maintenance_port'],
                '-p', str(info['ssh_port']),
