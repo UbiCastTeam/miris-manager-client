@@ -114,7 +114,12 @@ class MirisManagerClient():
                     logger.error('Registration failed: %s', e)
                     raise Exception('Registration failed: %s' % e)
             # Add signature in headers
-            _headers = signing_lib.get_signature(self) if not anonymous else dict()
+            # headers with "_" are ignored by Django
+            _headers = {'api-key': self.conf['API_KEY']}
+            if not anonymous:
+                signature = signing_lib.get_signature(self)
+                if signature:
+                    _headers.update(signature)
             if headers:
                 _headers.update(headers)
         # Make API request

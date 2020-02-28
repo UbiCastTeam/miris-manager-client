@@ -24,8 +24,7 @@ def get_signature(client):
         digestmod=hashlib.sha256
     ).digest()
     hm = base64.b64encode(hm).decode('utf-8')
-    # headers with "_" are ignored by Django
-    return {'api-key': client.conf['API_KEY'], 'time': utime, 'hmac': hm}
+    return {'time': utime, 'hmac': hm}
 
 
 def check_signature(client, rdata):
