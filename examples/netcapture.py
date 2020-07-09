@@ -29,6 +29,7 @@ with requests.Session() as s:
         'async': 'no',
         'action': 'START_RECORDING',
         'speaker_email': 'user@domain.com',
+        'course_id': 'mscspeaker'
     }
     # list of mediaserver supported parameters here: https://sandbox.ubicast.tv/static/mediaserver/docs/api/api.html#api-v2-medias-add
 
