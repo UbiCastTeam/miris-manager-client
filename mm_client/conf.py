@@ -28,7 +28,9 @@ BASE_CONF = {
     'TIMEOUT': 10,
 
     # Proxies for API requests
-    # Example: {'http': 'http://10.10.1.10:3128', 'https': 'http://10.10.1.10:1080'}
+    # To use system proxies: None (proxies should be set in environment)
+    # To disable proxies: {'http': '', 'https': ''}
+    # To use a proxy: {'http': 'http://10.10.1.10:3128', 'https': 'http://10.10.1.10:1080'}
     'PROXIES': None,
 
     # This list makes available or not actions buttons in Miris Manager
