@@ -120,9 +120,8 @@ class SSHTunnelManager():
         port = response.get('control_port') or response.get('port')
         if port is not None:
             self.update_ssh_state('control_port', port)
-            host = self.client.conf['SERVER_URL'].split('://')[-1]
-            if host.endswith('/'):
-                host = host[:-1]
+            host = self.client.conf['SERVER_URL'].split('://', 1)[-1]
+            host = host.rsplit(':', 1)[0].rstrip('/')
             cmd = prepare_ssh_command(host, self.ssh_tunnel_state)
             self.update_ssh_state('command', cmd)
             logger.info('Starting SSH with command:\n    %s', ' '.join(cmd))
