@@ -55,6 +55,7 @@ BASE_CONF = {
         'DELETE_MESSAGE': {'method': 'post', 'url': '/api/v3/fleet/messages/delete/'},
         'PREPARE_TUNNEL': {'method': 'post', 'url': '/api/v3/fleet/proxy/prepare-tunnel/'},
         'SET_PROFILES': {'method': 'post', 'url': '/api/v3/fleet/profiles/set/'},
-        'CHECK_TOKEN': {'method': 'post', 'url': '/api/v3/users/check-token/'}
+        'CHECK_TOKEN': {'method': 'post', 'url': '/api/v3/users/check-token/'},
+        'GET_RELEASE': {'method': 'get', 'url': '/api/v3/packaging/check-for-update/'}
     }
 }
