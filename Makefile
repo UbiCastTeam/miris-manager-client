@@ -2,14 +2,11 @@ PYFILES = mm_client/ examples/
 
 all:
 
-format:
-	black ${PYFILES}
-
 lint:
 	flake8 ${PYFILES}
 
-develop:
-	pip install -e .[dev]
+test:
+	python3 -m unittest discover tests/ -v
 
 build: clean
 	python setup.py sdist bdist_wheel
