@@ -32,7 +32,7 @@ class LongPollingManager():
         logger.info('Starting long polling to %s' % self.client.conf['SERVER_URL'])
         self.loop_running = True
 
-        def exit_handler(signum, frame):
+        def exit_handler(*args, **kwargs):
             self.loop_running = False
             logger.info('Long polling loop stopped')
             sys.exit(1)
