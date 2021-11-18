@@ -3,7 +3,6 @@
 '''
 Miris Manager client class
 '''
-import json
 import logging
 import os
 import requests
@@ -14,6 +13,13 @@ from .lib import signing as signing_lib
 from .lib import ssh_tunnel as ssh_tunnel_lib
 
 logger = logging.getLogger('mm_client.client')
+
+
+class MirisManagerRequestError(Exception):
+    def __init__(self, *args, **kwargs):
+        self.status_code = kwargs.pop('status_code', None)
+        self.error_code = kwargs.pop('error_code', None)
+        super().__init__(*args, **kwargs)
 
 
 class MirisManagerClient():
@@ -63,10 +69,43 @@ class MirisManagerClient():
 
     def get_url_info(self, url_or_action):
         if url_or_action.startswith('/'):
-            return dict(url=url_or_action)
+            return {'url': url_or_action}
         if url_or_action not in self.conf['API_CALLS']:
-            raise Exception('Invalid url requested: %s does not exist in API_CALLS configuration.' % url_or_action)
+            raise MirisManagerRequestError(
+                'Invalid url requested: %s does not exist in API_CALLS configuration.' % url_or_action,
+                status_code=0,
+                error_code='invalid_url'
+            )
         return self.conf['API_CALLS'][url_or_action]
+
+    def _request(self, url, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):
+        req = getattr(requests, method)(
+            url=self.conf['SERVER_URL'] + url,
+            headers=headers,
+            params=params,
+            data=data,
+            files=files,
+            proxies=self.conf.get('PROXIES'),
+            verify=self.conf['VERIFY_SSL'],
+            timeout=timeout or self.conf['TIMEOUT']
+        )
+        status_code = req.status_code
+        error_code = None
+        body = req.text.strip()
+        if req.status_code != 200:
+            try:
+                response = req.json()
+                error = response['error']
+                error_code = response.get('code')
+            except Exception:
+                error = 'Request failed with status code %s:\n%s.' % (req.status_code, body[:200])
+            raise MirisManagerRequestError(
+                error,
+                status_code=status_code,
+                error_code=error_code
+            )
+        response = req.json() if body else {}
+        return response
 
     def _register(self):
         if self.conf.get('API_KEY'):
@@ -74,23 +113,23 @@ class MirisManagerClient():
         logger.info('No API key in configuration, requesting system registration...')
         data = info_lib.get_host_info(self.conf['SERVER_URL'])
         data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
-        req = requests.post(
-            url=self.conf['SERVER_URL'] + self.get_url_info('REGISTER_SYSTEM')['url'],
-            data=data,
-            proxies=self.conf.get('PROXIES'),
-            verify=self.conf['VERIFY_SSL'],
-            timeout=self.conf['TIMEOUT']
-        )
-        response = req.text.strip()
-        if req.status_code != 200:
-            raise Exception('Request failed with status code %s:\n%s.' % (req.status_code, response[:200]))
-        response = json.loads(response) if response else dict()
+        # Make API request
+        response = self._request(self.get_url_info('REGISTER_SYSTEM')['url'], method='post', data=data)
+        # Check response
         secret_key = response.get('secret_key')
         if not secret_key:
-            raise Exception('No secret key received.')
+            raise MirisManagerRequestError(
+                'No secret key received.',
+                status_code=200,
+                error_code='no_secret'
+            )
         api_key = response.get('api_key')
         if not api_key:
-            raise Exception('No API key received.')
+            raise MirisManagerRequestError(
+                'No API key received.',
+                status_code=200,
+                error_code='no_api_key'
+            )
         self.update_conf('SECRET_KEY', secret_key)
         self.update_conf('API_KEY', api_key)
         logger.info('System registration done.')
@@ -123,26 +162,7 @@ class MirisManagerClient():
             if headers:
                 _headers.update(headers)
         # Make API request
-        req = getattr(requests, url_info.get('method', method))(
-            url=self.conf['SERVER_URL'] + url_info['url'],
-            headers=_headers,
-            params=params,
-            data=data,
-            files=files,
-            proxies=self.conf.get('PROXIES'),
-            verify=self.conf['VERIFY_SSL'],
-            timeout=timeout or self.conf['TIMEOUT']
-        )
-        response = req.text.strip()
-        if req.status_code != 200:
-            try:
-                j = json.loads(response)
-                error = j['error']
-            except Exception:
-                error = 'Request failed with status code %s:\n%s.' % (req.status_code, response[:200])
-            raise Exception(error)
-        if response:
-            response = json.loads(response)
+        response = self._request(url_info['url'], method=url_info.get('method', method), headers=_headers, params=params, data=data, files=files, timeout=timeout)
         return response
 
     def long_polling_loop(self):
@@ -178,14 +198,15 @@ class MirisManagerClient():
         return response
 
     def update_capabilities(self):
-        data = dict()
-        data['capabilities'] = ' '.join(self.conf['CAPABILITIES'])
+        data = {
+            'capabilities': ' '.join(self.conf['CAPABILITIES']),
+        }
         # Make API request
         response = self.api_request('SET_INFO', data=data)
         return response
 
     def set_status(self, status=None, status_info=None, status_message=None, profile=None, remaining_space=None, remaining_time=None):
-        data = dict()
+        data = {}
         if status is not None:
             data['status'] = status
         if status_info is not None:
