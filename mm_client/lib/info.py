@@ -13,6 +13,9 @@ logger = logging.getLogger('mm_client.lib.info')
 
 
 def get_host_info(url):
+    '''
+    Collect information on local system.
+    '''
     # get hostname
     hostname = socket.gethostname()
     # get local IP address
@@ -47,6 +50,9 @@ def get_host_info(url):
 
 
 def get_free_space_bytes(path):
+    '''
+    Get free space on partition used for given path.
+    '''
     statvfs = os.statvfs(path)
     free = statvfs.f_frsize * statvfs.f_bavail
     return free
@@ -54,6 +60,6 @@ def get_free_space_bytes(path):
 
 def get_remaining_space():
     '''
-    Return remaining space in /home in MB
+    Return remaining space in /home in MB.
     '''
-    return int(get_free_space_bytes('/home') / (1024 * 1024))
+    return int(get_free_space_bytes('/home') / 1000000)
