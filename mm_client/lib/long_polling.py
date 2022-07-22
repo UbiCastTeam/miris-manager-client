@@ -74,6 +74,9 @@ class LongPollingManager():
                     success = False
                     logger.error('Failed to process response: %s\n%s', e, traceback.format_exc())
                     self.client.set_command_status(uid, 'FAILED', str(e))
+                    if os.environ.get('CI_PIPELINE_ID'):
+                        # propagate exception so that it can be detected in CI
+                        raise Exception(e)
                 else:
                     self.client.set_command_status(uid, 'DONE', result)
         finally:
