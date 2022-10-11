@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Miris Manager wol relay service
+After=network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Environment=PYTHONPATH=/home/myuser/miris-manager-client
+ExecStart=/usr/bin/python3 -u /home/myuser/miris-manager-client/examples/wol_relay.py /home/myuser/miris-manager-client/conf.json
+Restart=always
+User=myuser
