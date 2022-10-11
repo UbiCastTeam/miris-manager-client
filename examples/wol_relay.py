@@ -16,7 +16,7 @@ logger = logging.getLogger('wol_relay')
 class WOLRelay(MirisManagerClient):
     DEFAULT_CONF = {
         'CAPABILITIES': ['send_wake_on_lan'],
-        'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary
+        'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary, installed with `apt install wakeonlan`
     }
 
     def handle_action(self, action, params):
