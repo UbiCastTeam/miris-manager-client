@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 '''
 Miris Manager long polling management
 This module is not intended to be used directly, only the client class should be used.
