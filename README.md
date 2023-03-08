@@ -8,6 +8,12 @@ A Python3 client to use UbiCast Miris Manager remote control API.
 This client is intended to act as a system in Miris Manager so it allows you to integrate a device in order to control it using Miris Manager.
 
 
+## Requirements
+
+git
+python >= 3.9 (download the latest stable release from https://www.python.org/downloads/)
+
+
 ## Important
 
 For production use, it is recommended to use the branch named "stable". The "master" branch is used for development.
