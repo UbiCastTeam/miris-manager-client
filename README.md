@@ -10,13 +10,13 @@ This client is intended to act as a system in Miris Manager so it allows you to 
 
 ## Requirements
 
-git
-python >= 3.9 (download the latest stable release from https://www.python.org/downloads/)
+* python >= 3.9 (download the latest stable release from https://www.python.org/downloads/)
+* python3-requests >= 2.30
 
 
 ## Important
 
-For production use, it is recommended to use the branch named "stable". The "master" branch is used for development.
+For production use, it is recommended to use the branch named "stable". The "main" branch is used for development.
 
 
 ## Client class instantiation
@@ -65,16 +65,23 @@ There are more examples in the `examples` directory.
 
 Here is the list of actions that can be sent to the client depending on its supported capabilities:
 
-    # Basic actions
-    SHUTDOWN: capability: shutdown, description: Shutdown system
-    REBOOT: capability: reboot, description: Reboot system
-    UPGRADE: capability: upgrade, description: Upgrade system software
-    # Recording
-    START_RECORDING: capability: record, description: Start recording
-    STOP_RECORDING: capability: record, description: Stop recording
-    LIST_PROFILES: capability: record, description: Refresh profiles list
-    # Publishing
-    START_PUBLISHING: capability: publish, description: Start publishing non published media
-    STOP_PUBLISHING: capability: publish, description: Stop publishing
-    # Wake on lan
-    WAKE_ON_LAN_SEND: capability: send_wake_on_lan, description: Send a wake on LAN network package from this system to wake another system
+**Basic actions**
+
+* `SHUTDOWN`: capability: shutdown, description: Shutdown system
+* `REBOOT`: capability: reboot, description: Reboot system
+* `UPGRADE`: capability: upgrade, description: Upgrade system software
+
+**Recording**
+
+* `START_RECORDING`: capability: record, description: Start recording
+* `STOP_RECORDING`: capability: record, description: Stop recording
+* `LIST_PROFILES`: capability: record, description: Refresh profiles list
+
+**Publishing**
+
+* `START_PUBLISHING`: capability: publish, description: Start publishing non published media
+* `STOP_PUBLISHING`: capability: publish, description: Stop publishing
+
+**Wake on lan**
+
+* `WAKE_ON_LAN_SEND`: capability: send_wake_on_lan, description: Send a wake on LAN network package from this system to wake another system
