@@ -74,7 +74,7 @@ class LongPollingManager():
                     self.client.set_command_status(uid, 'FAILED', str(e))
                     if os.environ.get('CI_PIPELINE_ID'):
                         # propagate exception so that it can be detected in CI
-                        raise Exception(e)
+                        raise
                 else:
                     self.client.set_command_status(uid, 'DONE', result)
         finally:
@@ -88,10 +88,10 @@ class LongPollingManager():
         if self.client.conf.get('API_KEY'):
             invalid = check_signature(self.client, response)
             if invalid:
-                raise Exception('Invalid signature: %s' % invalid)
+                raise ValueError('Invalid signature: %s' % invalid)
         action = response.get('action')
         if not action:
-            raise Exception('No action received.')
+            raise ValueError('No action received.')
         params = response.get('params', dict())
         logger.debug('Received command "%s": %s.', response.get('uid'), action)
         if action == 'PING':

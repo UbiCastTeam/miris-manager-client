@@ -4,8 +4,9 @@ This module is not intended to be used directly, only the client class should be
 '''
 import json
 import logging
-import os
 import re
+from pathlib import Path
+
 from ..conf import BASE_CONF
 
 logger = logging.getLogger('mm_client.lib.configuration')
@@ -18,14 +19,15 @@ def load_conf(default_conf=None, local_conf=None):
     for index, conf_override in enumerate((default_conf, local_conf)):
         if not conf_override:
             continue
+        if isinstance(conf_override, str):
+            conf_override = Path(conf_override)
         if isinstance(conf_override, dict):
             for key, val in conf_override.items():
                 if not key.startswith('_'):
                     conf[key] = val
-        elif isinstance(conf_override, str):
-            if os.path.exists(conf_override):
-                with open(conf_override, 'r') as fo:
-                    content = fo.read()
+        elif isinstance(conf_override, Path):
+            if conf_override.exists():
+                content = conf_override.read_text()
                 content = re.sub(r'\n\s*//.*', '\n', content)  # remove comments
                 conf_mod = json.loads(content) if content else None
                 if not conf_mod:
@@ -33,7 +35,7 @@ def load_conf(default_conf=None, local_conf=None):
                 else:
                     logger.debug('Config file "%s" loaded.', conf_override)
                     if not isinstance(conf_mod, dict):
-                        raise ValueError('The configuration in "%s" is not a dict.' % conf_override)
+                        raise ValueError(f'The configuration in "{conf_override}" is not a dict.')
                     conf.update(conf_mod)
             else:
                 logger.debug('Config file does not exists, using default config.')
@@ -45,20 +47,25 @@ def load_conf(default_conf=None, local_conf=None):
 
 
 def update_conf(local_conf, key, value):
-    if not local_conf or not isinstance(local_conf, str):
+    if not local_conf:
+        logger.debug('Cannot update configuration, "local_conf" is not set.')
+        return False
+    if isinstance(local_conf, str):
+        local_conf = Path(local_conf)
+    elif not isinstance(local_conf, Path):
         logger.debug('Cannot update configuration, "local_conf" is not a path.')
-        return
-    content = ''
-    if os.path.isfile(local_conf):
-        with open(local_conf, 'r') as fo:
-            content = fo.read()
-        content = content.strip()
-    data = json.loads(content) if content else dict()
+        return False
+
+    if local_conf.is_file():
+        content = local_conf.read_text().strip()
+    else:
+        content = ''
+    data = json.loads(content) if content else {}
     data[key] = value
     new_content = json.dumps(data, sort_keys=True, indent=4)
-    with open(local_conf, 'w') as fo:
-        fo.write(new_content)
+    local_conf.write_text(new_content)
     logger.debug('Configuration file "%s" updated: "%s" set to "%s".', local_conf, key, value)
+    return True
 
 
 def check_conf(conf):

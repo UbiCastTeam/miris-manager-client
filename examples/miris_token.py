@@ -18,24 +18,26 @@ user_info = {
 }
 
 # GENERATE ONE TIME TOKEN
+# Data will be passed to the recorder and also prevents another user
+# from accessing the system if a recording is already in progress
 url = MM_URL + '/api/v3/users/create-token/'
 data = {
     'purpose': 'control',
     'system': SYSTEM,
-    'data': json.dumps(user_info),  # will be passed to the recorder and also prevents another user from accessing the system if a recording is already in progress
+    'data': json.dumps(user_info),
 }
 r = requests.post(url, headers=headers, data=data).json()
 token = r['token']
 #{'token': 'c8pse0v0gv312eg07m3vb29u6c78fcrlg5c1roo1', 'expires': '2022-01-14 02:56:13'}
 
-# GENERATE FULL URL THE USER SHOULD BE 302ed to
+# GENERATE FULL URL THE USER SHOULD BE REDIRECTED TO
 params = {
     'profile': 'myprofile',
     'title': 'my title',
     'location': 'Room A',
     'live_title': 'my live title',
     'channel': 'mscspeaker',
-    'logout_url': 'http://www.ubicast.eu',  # you should probably redirect to the custom login page
+    'logout_url': 'https://example.com',  # you should probably redirect to the custom login page
     'token': token,
 }
 

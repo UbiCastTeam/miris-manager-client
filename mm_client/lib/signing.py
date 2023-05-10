@@ -13,7 +13,7 @@ logger = logging.getLogger('mm_client.lib.signing')
 
 def get_signature(client):
     if not client.conf.get('SECRET_KEY') or not client.conf.get('API_KEY'):
-        return dict()
+        return {}
     utime = datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S_%f')
     to_sign = 'time=%s|api_key=%s' % (utime, client.conf['API_KEY'])
     hm = hmac.new(

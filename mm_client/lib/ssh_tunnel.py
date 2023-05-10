@@ -1,7 +1,9 @@
 '''
 Miris Manager SSH tunnel management
 This module is not intended to be used directly, only the client class should be used.
-The SSH tunnel goal is to access the system web interface (HTTPS) from Miris Manager using a connection from the system to the Miris Manager.
+
+The SSH tunnel goal is to access the system web interface (HTTPS) from
+Miris Manager using a connection from the system to the Miris Manager.
 '''
 import logging
 import os
@@ -10,38 +12,52 @@ import time
 import multiprocessing
 import re
 import signal
+from pathlib import Path
 
 logger = logging.getLogger('mm_client.lib.ssh_tunnel')
 
 
+class MirisManagerTunnelError(Exception):
+    pass
+
+
 def get_ssh_public_key():
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
-    ssh_dir = os.path.dirname(ssh_key_path)
-    if not os.path.exists(ssh_dir):
-        os.makedirs(ssh_dir)
-        os.chmod(ssh_dir, 0o700)
-    if os.path.exists(ssh_key_path):
-        if not os.path.exists(ssh_key_path + '.pub'):
-            raise Exception('Weird state detetected: "%s" exists but not "%s" !' % (ssh_key_path, ssh_key_path + '.pub'))
+    ssh_dir = Path('~/.ssh').expanduser()
+    ssh_key_path = ssh_dir / 'miris-manager-client-key'
+    ssh_pub_path = ssh_dir / 'miris-manager-client-key.pub'
+    if not ssh_dir.exists():
+        ssh_dir.mkdir(parents=True)
+        ssh_dir.chmod(0o700)
+    if ssh_key_path.exists():
+        if not ssh_pub_path.exists():
+            raise MirisManagerTunnelError(
+                f'Weird state detetected: "{ssh_key_path}" exists but not "{ssh_pub_path}" !'
+            )
         logger.debug('Using existing SSH key: "%s".', ssh_key_path)
     else:
         logger.info('Creating new SSH key: "%s".', ssh_key_path)
-        p = subprocess.Popen(['ssh-keygen', '-b', '4096', '-f', ssh_key_path, '-N', ''], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            ['ssh-keygen', '-b', '4096', '-f', str(ssh_key_path), '-N', ''],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
         p.communicate(input=b'\n\n\n')
         if p.returncode != 0:
-            out = p.stdout.decode('utf-8') + '\n' + p.stderr.decode('utf-8')
-            raise Exception('Failed to generate SSH key:\n%s' % out)
-        os.chmod(ssh_key_path, 0o600)
-        os.chmod(ssh_key_path + '.pub', 0o600)
-    with open(ssh_key_path + '.pub', 'r') as fo:
-        public_key = fo.read()
+            out = p.stdout.decode('utf-8').strip()
+            raise MirisManagerTunnelError(
+                f'Failed to generate SSH key:\n{out}'
+            )
+        ssh_key_path.chmod(0o600)
+        ssh_pub_path.chmod(0o600)
+    public_key = ssh_pub_path.read_text()
     return public_key
 
 
 def prepare_ssh_command(host, info):
-    ssh_key_path = os.path.join(os.path.expanduser('~/.ssh/miris-manager-client-key'))
+    ssh_key_path = Path('~/.ssh/miris-manager-client-key').expanduser()
     command = ['ssh',
-               '-i', ssh_key_path,
+               '-i', str(ssh_key_path),
                '-nvNT',
                '-o', 'IdentitiesOnly=yes',
                '-o', 'NumberOfPasswordPrompts=0',
@@ -61,17 +77,39 @@ class SSHTunnelManager():
         self.client = client
         self.status_callback = status_callback
         self.pattern_list = [
-            dict(id='connecting', pattern=re.compile(r'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n')),
-            dict(id='connected', pattern=re.compile(r'debug1: Connection established.\r\n')),
-            dict(id='authenticated', pattern=re.compile(r'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n')),
-            dict(id='authenticated', pattern=re.compile(r'Authenticated to (?P<hostname>[^ ]+) \(\[(?P<ip>[0-9\.]{7,15})\]:(?P<port>\d{1,5})\).\r\n')),
-            dict(id='running', pattern=re.compile(r'debug1: Entering interactive session.\r\n')),
-            dict(id='not_known', pattern=re.compile(r'ssh: [^:]+: Name or service not known\r\n')),
-            dict(id='port_refused', pattern=re.compile(r'Warning: remote port forwarding failed for listen port (?P<port>\d{1,5})')),
-            dict(id='refused', pattern=re.compile(r'ssh: connect to host [^:]+: Connection refused\r\n')),
-            dict(id='control_refused', pattern=re.compile(r'connect_to (?P<hostname>[^ ]+) port (?P<port>\d{1,5}): failed\.\r\n')),
-            dict(id='denied', pattern=re.compile(r'Permission denied \(publickey,password\).\r\n')),
-            dict(id='closed', pattern=re.compile(r'Connection to (?P<hostname>[^ ]+) closed.\r\n')),
+            dict(id='connecting', pattern=re.compile(
+                r'debug1: Connecting to (?P<hostname>[^ ]+) \[(?P<ip>[0-9\.]{7,15})\] port (?P<port>\d{1,5}).\r\n'
+            )),
+            dict(id='connected', pattern=re.compile(
+                r'debug1: Connection established.\r\n'
+            )),
+            dict(id='authenticated', pattern=re.compile(
+                r'debug1: Authentication succeeded \((?P<method>[^\)]+)\).\r\n'
+            )),
+            dict(id='authenticated', pattern=re.compile(
+                r'Authenticated to (?P<hostname>[^ ]+) \(\[(?P<ip>[0-9\.]{7,15})\]:(?P<port>\d{1,5})\).\r\n'
+            )),
+            dict(id='running', pattern=re.compile(
+                r'debug1: Entering interactive session.\r\n'
+            )),
+            dict(id='not_known', pattern=re.compile(
+                r'ssh: [^:]+: Name or service not known\r\n'
+            )),
+            dict(id='port_refused', pattern=re.compile(
+                r'Warning: remote port forwarding failed for listen port (?P<port>\d{1,5})'
+            )),
+            dict(id='refused', pattern=re.compile(
+                r'ssh: connect to host [^:]+: Connection refused\r\n'
+            )),
+            dict(id='control_refused', pattern=re.compile(
+                r'connect_to (?P<hostname>[^ ]+) port (?P<port>\d{1,5}): failed\.\r\n'
+            )),
+            dict(id='denied', pattern=re.compile(
+                r'Permission denied \(publickey,password\).\r\n'
+            )),
+            dict(id='closed', pattern=re.compile(
+                r'Connection to (?P<hostname>[^ ]+) closed.\r\n'
+            )),
         ]
         self.loop_ssh_tunnel = False
         self.process = None
@@ -91,7 +129,7 @@ class SSHTunnelManager():
     def establish_tunnel(self):
         public_key = None
         response = None
-        logger.debug('Establishing new tunnel to %s' % self.client.conf['SERVER_URL'])
+        logger.debug('Establishing new tunnel to %s', self.client.conf['SERVER_URL'])
         self._stop_reader()
         self._try_closing_process()
         self.update_ssh_state('state', 'prepare tunnel')
@@ -104,7 +142,7 @@ class SSHTunnelManager():
             self.update_ssh_state('control_port', 0)
             self.update_ssh_state('maintenance_port', 0)
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
-            logger.error('Cannot prepare ssh tunnel : %s' % str(e))
+            logger.error('Cannot prepare ssh tunnel : %s', str(e))
             return
         ssh_user = response.get('ssh_user')
         if ssh_user and ssh_user != self.ssh_tunnel_state['ssh_user']:
@@ -124,7 +162,12 @@ class SSHTunnelManager():
             self.update_ssh_state('command', cmd)
             logger.info('Starting SSH with command:\n    %s', ' '.join(cmd))
             if self.loop_ssh_tunnel:
-                self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=os.setsid)
+                self.process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    preexec_fn=os.setsid
+                )
                 self.stdout_queue = multiprocessing.Queue()
                 self.stdout_reader = AsynchronousFileReader(self.process.stdout, self.stdout_queue)
                 self.stdout_reader.start()
@@ -136,11 +179,11 @@ class SSHTunnelManager():
 
     def update_ssh_state(self, key, value):
         if key == 'state' and self.ssh_tunnel_state.get('state') != value:
-            logger.info('SSH state changed to %s' % value)
+            logger.info('SSH state changed to %s', value)
         if self.ssh_tunnel_state.get(key) is not None:
             self.ssh_tunnel_state[key] = value
         else:
-            logger.warning('Key %s not exists in ssh state dict' % key)
+            logger.warning('Key %s not exists in ssh state dict', key)
         if self.status_callback:
             self.status_callback(self.ssh_tunnel_state)
 
@@ -240,7 +283,7 @@ class SSHTunnelManager():
                 ssh_logs = str(e)
             self.update_ssh_state('state', 'error')
             self.update_ssh_state('last_tunnel_info', ssh_logs)
-            logger.error('SSH tunnel process has terminated with: %s' % ssh_logs)
+            logger.error('SSH tunnel process has terminated with: %s', ssh_logs)
             need_retry = True
         else:
             # process is still alive
@@ -256,11 +299,21 @@ class SSHTunnelManager():
                             break
                     if not pattern_id_found:
                         if ssh_stdout.startswith('debug1:') or ssh_stdout.startswith('OpenSSH_'):
-                            logger.debug('[SSH stdout] %s' % ssh_stdout)
+                            logger.debug('[SSH stdout] %s', ssh_stdout)
                         else:
-                            logger.warning('[SSH stdout] %s' % ssh_stdout)
+                            logger.warning('[SSH stdout] %s', ssh_stdout)
                     elif pattern_id_found not in ['connecting', 'connected', 'authenticated', 'running']:
-                        logger.error('Need to retry tunnel (ssh port: {ssh_port}, remote control port: {control_port}, remote maintenance port: {maintenance_port}) because ssh command failed in stdout %s'.format(**self.ssh_tunnel_state) % pattern_id_found)
+                        logger.error(
+                            (
+                                'Need to retry tunnel '
+                                '(ssh port: %s, remote control port: %s, remote maintenance port: %s) '
+                                'because ssh command failed in stdout %s'
+                            ),
+                            self.ssh_tunnel_state.get('ssh_port'),
+                            self.ssh_tunnel_state.get('control_port'),
+                            self.ssh_tunnel_state.get('maintenance_port'),
+                            pattern_id_found
+                        )
                         need_retry = True
                         break
             except OSError as e:

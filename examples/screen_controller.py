@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 '''
 An example of Miris Manager client usage.
 This script is intended to send screenshot and handle click requests.
@@ -28,7 +27,10 @@ class ScreenController(MirisManagerClient):
 
         elif action == 'GET_SCREENSHOT':
             self.set_status(remaining_space='auto')  # Send remaining space to Miris Manager
-            self.set_screenshot('/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'), file_name='screen.png')
+            self.set_screenshot(
+                path='/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'),
+                file_name='screen.png'
+            )
             logger.info('Screenshot sent.')
 
         elif action == 'SIMULATE_CLICK':

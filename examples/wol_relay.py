@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 '''
 An example of Miris Manager client usage.
 This script is intended to create devices acting as wake on lan relay and video displayer.

@@ -1,9 +1,11 @@
 '''
-Miris Manager client class
+Miris Manager client main module
 '''
 import logging
-import os
+from pathlib import Path
+
 import requests
+
 from .lib import configuration as configuration_lib
 from .lib import info as info_lib
 from .lib import long_polling as long_polling_lib
@@ -70,13 +72,14 @@ class MirisManagerClient():
             return {'url': url_or_action}
         if url_or_action not in self.conf['API_CALLS']:
             raise MirisManagerRequestError(
-                'Invalid url requested: %s does not exist in API_CALLS configuration.' % url_or_action,
+                f'Invalid url requested: {url_or_action} does not exist in API_CALLS configuration.',
                 status_code=0,
                 error_code='invalid_url'
             )
         return self.conf['API_CALLS'][url_or_action]
 
-    def _request(self, url, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):
+    def _request(self, url, method='get', headers=None, params=None,
+                 data=None, files=None, anonymous=None, timeout=None):
         req = getattr(requests, method)(
             url=self.conf['SERVER_URL'] + url,
             headers=headers,
@@ -133,7 +136,8 @@ class MirisManagerClient():
         logger.info('System registration done.')
         return True
 
-    def api_request(self, url_or_action, method='get', headers=None, params=None, data=None, files=None, anonymous=None, timeout=None):
+    def api_request(self, url_or_action, method='get', headers=None, params=None,
+                    data=None, files=None, anonymous=None, timeout=None):
         self.check_conf()
         url_info = self.get_url_info(url_or_action)
         if anonymous is None:
@@ -144,12 +148,13 @@ class MirisManagerClient():
             # Register system if no API key and auto registration
             if not self.conf.get('API_KEY'):
                 if not self.conf['AUTO_REGISTRATION']:
-                    raise Exception('The client auto registration is disabled and no API_KEY is set in conf file, please set one or turn on auto registration.')
+                    raise ValueError('The client auto registration is disabled and no API_KEY is set in conf file, '
+                                     'please set one or turn on auto registration.')
                 try:
                     self._register()
                 except Exception as e:
                     logger.error('Registration failed: %s', e)
-                    raise Exception('Registration failed: %s' % e)
+                    raise
             # Add signature in headers
             # headers with "_" are ignored by Django
             _headers = {'api-key': self.conf['API_KEY']}
@@ -160,7 +165,15 @@ class MirisManagerClient():
             if headers:
                 _headers.update(headers)
         # Make API request
-        response = self._request(url_info['url'], method=url_info.get('method', method), headers=_headers, params=params, data=data, files=files, timeout=timeout)
+        response = self._request(
+            url_info['url'],
+            method=url_info.get('method', method),
+            headers=_headers,
+            params=params,
+            data=data,
+            files=files,
+            timeout=timeout
+        )
         return response
 
     def long_polling_loop(self):
@@ -203,7 +216,8 @@ class MirisManagerClient():
         response = self.api_request('SET_INFO', data=data)
         return response
 
-    def set_status(self, status=None, status_info=None, status_message=None, profile=None, remaining_space=None, remaining_time=None):
+    def set_status(self, status=None, status_info=None, status_message=None,
+                   profile=None, remaining_space=None, remaining_time=None):
         data = {}
         if status is not None:
             data['status'] = status
@@ -227,7 +241,7 @@ class MirisManagerClient():
     def set_screenshot(self, path, file_name=None):
         with open(path, 'rb') as file_obj:
             response = self.api_request('SET_SCREENSHOT', files=dict(
-                screenshot=(file_name or os.path.basename(path), file_obj)
+                screenshot=(file_name or Path(path).name, file_obj)
             ))
         return response
 
