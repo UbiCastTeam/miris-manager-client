@@ -46,7 +46,7 @@ If you are using the first version of this client (commit `33b554991303b573254d5
 * Replace all occurences of `CHECK_SSL` by `VERIFY_SSL` in all configuration.
 
 
-## Example
+## Examples
 
 ### Ping the server
 
@@ -58,7 +58,24 @@ response = mmc.api_request('PING')
 print(response)
 ```
 
-There are more examples in the `examples` directory.
+
+### Recorder system
+
+This example is the use case of a recorder system that can be controlled through the long polling.
+
+[Link to the file](/examples/recorder_controller.py)
+
+
+### Wake on LAN requests
+
+This example is the use case of a client that forwards wake on LAN requests received through the long polling to its network.
+
+[Link to the file](/examples/wol_relay.py)
+
+
+### Other examples
+
+There are more examples in the [examples](/examples) directory.
 
 
 ## Actions

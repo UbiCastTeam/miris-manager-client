@@ -11,13 +11,13 @@ import logging
 logger = logging.getLogger('mm_client.lib.signing')
 
 
-def get_signature(client):
-    if not client.conf.get('SECRET_KEY') or not client.conf.get('API_KEY'):
+def get_signature(conf):
+    if not conf.get('SECRET_KEY') or not conf.get('API_KEY'):
         return {}
     utime = datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S_%f')
-    to_sign = 'time=%s|api_key=%s' % (utime, client.conf['API_KEY'])
+    to_sign = 'time=%s|api_key=%s' % (utime, conf['API_KEY'])
     hm = hmac.new(
-        client.conf['SECRET_KEY'].encode('utf-8'),
+        conf['SECRET_KEY'].encode('utf-8'),
         msg=to_sign.encode('utf-8'),
         digestmod=hashlib.sha256
     ).digest()
@@ -25,8 +25,8 @@ def get_signature(client):
     return {'time': utime, 'hmac': hm}
 
 
-def check_signature(client, rdata):
-    if not client.conf.get('SECRET_KEY') or not client.conf.get('API_KEY'):
+def check_signature(conf, rdata):
+    if not conf.get('SECRET_KEY') or not conf.get('API_KEY'):
         return None
     remote_time = rdata.get('time')
     remote_hmac = rdata.get('hmac')
@@ -44,9 +44,9 @@ def check_signature(client, rdata):
     diff = utcnow - rdate if utcnow > rdate else rdate - utcnow
     if diff.seconds > 300:
         return 'the difference between the request time and the current time is too large.'
-    to_sign = 'time=%s|api_key=%s' % (remote_time, client.conf['API_KEY'])
+    to_sign = 'time=%s|api_key=%s' % (remote_time, conf['API_KEY'])
     hm = hmac.new(
-        client.conf['SECRET_KEY'].encode('utf-8'),
+        conf['SECRET_KEY'].encode('utf-8'),
         msg=to_sign.encode('utf-8'),
         digestmod=hashlib.sha256
     ).digest()

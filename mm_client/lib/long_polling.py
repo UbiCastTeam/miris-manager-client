@@ -23,7 +23,7 @@ class LongPollingManager():
         self.last_error = None
         self.loop_running = False
 
-    def loop(self):
+    def loop(self, single_loop=False):
         # Check if systemd-notify should be called
         self.run_systemd_notify = self.client.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
@@ -41,6 +41,8 @@ class LongPollingManager():
         while self.loop_running:
             start = datetime.datetime.utcnow()
             success = self.call_long_polling()
+            if single_loop:
+                break
             if not success:
                 # Avoid starting too often new connections
                 duration = (datetime.datetime.utcnow() - start).seconds
@@ -67,16 +69,16 @@ class LongPollingManager():
                 success = True
                 uid = response.get('uid')
                 try:
-                    result = self.process_long_polling(response)
+                    status, data = self.process_long_polling(response)
                 except Exception as e:
                     success = False
                     logger.error('Failed to process response: %s\n%s', e, traceback.format_exc())
                     self.client.set_command_status(uid, 'FAILED', str(e))
                     if os.environ.get('CI_PIPELINE_ID'):
-                        # propagate exception so that it can be detected in CI
+                        # Propagate exception so that it can be detected in CI
                         raise
                 else:
-                    self.client.set_command_status(uid, 'DONE', result)
+                    self.client.set_command_status(uid, status, data)
         finally:
             if self.run_systemd_notify:
                 logger.debug('Notifying systemd watchdog.')
@@ -86,15 +88,22 @@ class LongPollingManager():
     def process_long_polling(self, response):
         logger.debug('Processing response.')
         if self.client.conf.get('API_KEY'):
-            invalid = check_signature(self.client, response)
+            invalid = check_signature(self.client.conf, response)
             if invalid:
                 raise ValueError('Invalid signature: %s' % invalid)
+        uid = response.get('uid')
         action = response.get('action')
         if not action:
             raise ValueError('No action received.')
-        params = response.get('params', dict())
-        logger.debug('Received command "%s": %s.', response.get('uid'), action)
+        params = response.get('params', {})
+        logger.debug('Received command "%s": %s.', uid, action)
         if action == 'PING':
-            pass
-        else:
-            return self.client.handle_action(action, params)
+            return 'DONE', ''
+        status, data = self.client.handle_action(uid=uid, action=action, params=params)
+        if status not in ('DONE', 'IN_PROGRESS', 'FAILED'):
+            logger.error('Your client has returned an invalid status in "handle_action".')
+            raise ValueError('An error occurred during the processing of the action by the client.')
+        if data is not None and not isinstance(data, str):
+            logger.error('Your client has returned an invalid type for data in "handle_action".')
+            raise ValueError('An error occurred during the processing of the action by the client.')
+        return status, data

@@ -18,16 +18,29 @@ class WOLRelay(MirisManagerClient):
         'WOL_PATH': 'wakeonlan',  # Path to the wake on lan binary, installed with `apt install wakeonlan`
     }
 
-    def handle_action(self, action, params):
-        # This method must be implemented in your client
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.update_capabilities()
+        try:
+            self.long_polling_loop()
+        except KeyboardInterrupt:
+            logger.info('KeyboardInterrupt received, stopping application.')
+
+    def handle_action(self, uid, action, params):
+        # See help on the handle action function:
+        # https://github.com/UbiCastTeam/miris-manager-client/blob/main/mm_client/client.py#L184
+        # Possible actions:
+        # https://mirismanager.ubicast.eu/static/skyreach/docs/api/values.html#system-command-actions
         if action == 'WAKE_ON_LAN':  # wol_relay capability
             # Send wake on lan
             success, message = self.send_wake_on_lan(params)
             logger.info('Running wake on lan: success: %s, message: %s', success, message)
             if not success:
-                raise Exception('Failed to send wake on lan: %s' % message)
+                raise RuntimeError('Failed to send wake on lan: %s' % message)
+            return 'DONE', ''
         else:
-            raise Exception('Unsupported action: %s.' % action)
+            raise NotImplementedError('Unsupported action: %s.' % action)
 
     def send_wake_on_lan(self, params):
         # Check that arguments are valid
@@ -56,9 +69,4 @@ class WOLRelay(MirisManagerClient):
 
 if __name__ == '__main__':
     local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    client = WOLRelay(local_conf)
-    client.update_capabilities()
-    try:
-        client.long_polling_loop()
-    except KeyboardInterrupt:
-        logger.info('KeyboardInterrupt received, stopping application.')
+    WOLRelay(local_conf)

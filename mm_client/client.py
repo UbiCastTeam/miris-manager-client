@@ -159,7 +159,7 @@ class MirisManagerClient():
             # headers with "_" are ignored by Django
             _headers = {'api-key': self.conf['API_KEY']}
             if not anonymous:
-                signature = signing_lib.get_signature(self)
+                signature = signing_lib.get_signature(self.conf)
                 if signature:
                     _headers.update(signature)
             if headers:
@@ -176,17 +176,27 @@ class MirisManagerClient():
         )
         return response
 
-    def long_polling_loop(self):
+    def long_polling_loop(self, single_loop=False):
         if not self._long_polling_manager:
             self._long_polling_manager = long_polling_lib.LongPollingManager(self)
-        self._long_polling_manager.loop()
+        self._long_polling_manager.loop(single_loop)
 
-    def handle_action(self, action, params):
-        # Function that should be implemented in your client to process the
-        # long polling responses.
-        # IMPORTANT: Any code written here should not be blocking more than 5s
-        # because of the delay after which the system is considered as offline
-        # in Miris Manager.
+    def handle_action(self, uid, action, params):
+        '''
+        Function that should be implemented in your client to process the long polling responses.
+        IMPORTANT: Any code written here should not be blocking more than 5s because of the
+                   delay after which the system is considered as offline in Miris Manager.
+        Arguments:
+        - uid: The system command unique identifier.
+        - action: The action to run.
+        - params: The action parameters.
+        Must return a tuple: (status, data)
+        - status: The system command status (string). Possible values:
+        - "DONE": The command has been executed successfully.
+        - "IN_PROGRESS": The command has been started but is not yet completed.
+        - "FAILED": The command execution has failed.
+        - data: The command result data (string). It can be a json dump or a message. Empty strings are allowed.
+        '''
         raise NotImplementedError('Your class should override the "handle_action" method.')
 
     def set_command_status(self, command_uid, status='DONE', data=None):
