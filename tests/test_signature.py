@@ -4,31 +4,28 @@ import pytest
 
 
 def test_signature__default():
-    from mm_client.client import MirisManagerClient
     from mm_client.lib.signing import get_signature, check_signature
 
-    client = MirisManagerClient()
+    conf = {}
 
-    signature = get_signature(client)
+    signature = get_signature(conf)
     assert signature == {}
 
-    assert check_signature(client, {}) is None
+    assert check_signature(conf, {}) is None
 
 
 def test_signature__configured():
-    from mm_client.client import MirisManagerClient
     from mm_client.lib.signing import get_signature, check_signature
 
     conf = {
         'SECRET_KEY': 'the secret key',
         'API_KEY': 'the API key',
     }
-    client = MirisManagerClient(conf)
 
-    signature = get_signature(client)
+    signature = get_signature(conf)
     assert sorted(signature.keys()) == ['hmac', 'time']
 
-    assert check_signature(client, signature) is None
+    assert check_signature(conf, signature) is None
 
 
 @pytest.mark.parametrize('signature, expected', [
@@ -50,13 +47,11 @@ def test_signature__configured():
         id='hmac'),
 ])
 def test_signature__invalid(signature, expected):
-    from mm_client.client import MirisManagerClient
     from mm_client.lib.signing import check_signature
 
     conf = {
         'SECRET_KEY': 'the secret key',
         'API_KEY': 'the API key',
     }
-    client = MirisManagerClient(conf)
 
-    assert check_signature(client, signature) == expected
+    assert check_signature(conf, signature) == expected

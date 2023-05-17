@@ -16,33 +16,26 @@ class ScreenController(MirisManagerClient):
         'CAPABILITIES': ['screen_control', 'screenshot'],
     }
 
-    def handle_action(self, action, params):
-        if action == 'SHUTDOWN':
-            logger.info('Shutdown requested.')
-            # TODO
-
-        elif action == 'REBOOT':
-            logger.info('Reboot requested.')
-            # TODO
-
-        elif action == 'GET_SCREENSHOT':
+    def handle_action(self, uid, action, params):
+        if action == 'GET_SCREENSHOT':
             self.set_status(remaining_space='auto')  # Send remaining space to Miris Manager
             self.set_screenshot(
                 path='/var/lib/AccountsService/icons/%s' % (os.environ.get('USER') or 'root'),
                 file_name='screen.png'
             )
             logger.info('Screenshot sent.')
+            return 'DONE', ''
 
         elif action == 'SIMULATE_CLICK':
             logger.info('Click requested: %s.', params)
-            # TODO
+            return 'DONE', ''
 
         elif action == 'SEND_TEXT':
             logger.info('Text received: %s.', params)
-            # TODO
+            return 'DONE', ''
 
         else:
-            raise Exception('Unsupported action: %s.' % action)
+            raise NotImplementedError('Unsupported action: %s.' % action)
 
 
 if __name__ == '__main__':
