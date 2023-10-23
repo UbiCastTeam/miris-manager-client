@@ -37,7 +37,7 @@ def get_ssh_public_key():
     else:
         logger.info('Creating new SSH key: "%s".', ssh_key_path)
         p = subprocess.Popen(
-            ['ssh-keygen', '-b', '4096', '-f', str(ssh_key_path), '-N', ''],
+            ['ssh-keygen', '-t', 'rsa', '-b', '4096', '-f', str(ssh_key_path), '-N', ''],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
