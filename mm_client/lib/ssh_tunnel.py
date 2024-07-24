@@ -283,7 +283,7 @@ class SSHTunnelManager():
                 ssh_logs = str(e)
             self.update_ssh_state('state', 'error')
             self.update_ssh_state('last_tunnel_info', ssh_logs)
-            logger.error('SSH tunnel process has terminated with: %s', ssh_logs)
+            logger.warning('SSH tunnel process has terminated with: %s', ssh_logs)
             need_retry = True
         else:
             # process is still alive
