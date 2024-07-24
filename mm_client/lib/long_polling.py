@@ -60,7 +60,7 @@ class LongPollingManager():
                 if self.last_error == e.__class__.__name__:
                     logger.debug(msg)  # Avoid spamming
                 else:
-                    logger.error(msg)
+                    logger.warning(msg)
                     self.last_error = e.__class__.__name__
         else:
             self.last_error = None
