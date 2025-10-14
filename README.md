@@ -10,7 +10,7 @@ This client is intended to act as a system in Miris Manager so it allows you to 
 
 ## Requirements
 
-* python >= 3.9 (download the latest stable release from https://www.python.org/downloads/)
+* python >= 3.11 (download the latest stable release from https://www.python.org/downloads/)
 * python3-requests >= 2.30
 
 
