@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools>=77.0"]
 
 [project]
-name = "miris-manager-api-client"
+name = "miris-manager-client"
 description = "A python3 reference implementation of an UbiCast Miris Manager API client."
 version = "7.0"
 authors = [{name = "UbiCast"}]
