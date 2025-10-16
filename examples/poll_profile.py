@@ -3,17 +3,24 @@
 Script to poll a profile status in a Miris Manager server.
 The script is intended to be used with a user API key and not a system API key.
 '''
-import sys
+import argparse
 import time
-from pathlib import Path
+
+from mm_client.client import MirisManagerClient
 
 
 if __name__ == '__main__':
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from mm_client.client import MirisManagerClient
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        'conf',
+        default=None,
+        help='The path of the configuration to use.',
+        nargs='?',
+        type=str,
+    )
+    args = parser.parse_args()
 
-    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    mmc = MirisManagerClient(local_conf)
+    mmc = MirisManagerClient(args.conf)
     # ping
     print(mmc.api_request('PING'))
     # poll profile status

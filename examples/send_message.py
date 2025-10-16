@@ -2,14 +2,24 @@
 '''
 Script to send a message
 '''
+import argparse
 import datetime
-import sys
+
 from mm_client.client import MirisManagerClient
 
 
 if __name__ == '__main__':
-    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    client = MirisManagerClient(local_conf)
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        'conf',
+        default=None,
+        help='The path of the configuration to use.',
+        nargs='?',
+        type=str,
+    )
+    args = parser.parse_args()
+
+    client = MirisManagerClient(args.conf)
     client.api_request('ADD_MESSAGE', data=dict(
         content='%s\nTest message' % datetime.datetime.now(),
         content_debug='Debug content with some special characters:\n\tđ€¶←←ħ¶ŧħ<< "\' fF5ef',

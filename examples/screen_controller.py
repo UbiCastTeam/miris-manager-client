@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 '''
-An example of Miris Manager client usage.
-This script is intended to send screenshot and handle click requests.
+A script to send a screenshot and handle click requests.
 '''
+import argparse
 import logging
 import os
-import sys
+
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('screen_controller')
@@ -39,8 +39,17 @@ class ScreenController(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    client = ScreenController(local_conf)
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        'conf',
+        default=None,
+        help='The path of the configuration to use.',
+        nargs='?',
+        type=str,
+    )
+    args = parser.parse_args()
+
+    client = ScreenController(args.conf)
     client.update_capabilities()
     try:
         client.long_polling_loop()

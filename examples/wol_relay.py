@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 '''
-An example of Miris Manager client usage.
-This script is intended to create devices acting as wake on lan relay and video displayer.
+A script to create devices acting as wake on lan relay.
 '''
+import argparse
 import logging
 import os
 import re
-import sys
+
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('wol_relay')
@@ -68,5 +68,14 @@ class WOLRelay(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    WOLRelay(local_conf)
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        'conf',
+        default=None,
+        help='The path of the configuration to use.',
+        nargs='?',
+        type=str,
+    )
+    args = parser.parse_args()
+
+    WOLRelay(args.conf)

@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-import requests
-import os
-import time
+"""
+Script to start and stop a recording by targeting a profile (room).
+"""
+import argparse
 import sys
+import time
 
-URL = 'https://mirismanager.ubicast.eu'
-headers = {'api-key': os.environ.get('MEDIACODER_MIRISMANAGER_API_KEY')}
-PROFILE = 'showroom'
+import requests
 
 
-def get_status(session):
+def get_status(args, session):
     status_dict = session.get(
-        URL + '/api/v3/fleet/systems/get-status/',
-        headers=headers,
-        params={'profile': PROFILE}
+        f'{args.url}/api/v3/fleet/systems/get-status/',
+        headers={'api-key': args.api_key},
+        params={'profile': args.profile}
     ).json()
     '''
     status dict sample:
@@ -62,44 +62,76 @@ def get_status(session):
     return status_dict.get('status')
 
 
-with requests.Session() as session:
-    data = {
-        'profile': PROFILE,
-        'async': 'no',
-        'action': 'START_RECORDING',
-        'speaker_email': 'user@domain.com',
-        'course_id': 'mscspeaker'
-    }
-    # list of mediaserver supported parameters here:
-    # https://ubicast.tv/static/mediaserver/docs/api/api.html#api-v2-medias-add
+def main(args):
+    with requests.Session() as session:
+        data = {
+            'profile': args.profile,
+            'async': 'no',
+            'action': 'START_RECORDING',
+            'speaker_email': 'user@domain.com',
+            'course_id': 'mscspeaker'
+        }
+        # list of mediaserver supported parameters here:
+        # https://ubicast.tv/static/mediaserver/docs/api/api.html#api-v2-medias-add
 
-    print('Start recording')
-    response = session.post(
-        URL + '/api/v3/fleet/control/run-command/',
-        headers=headers,
-        data=data
-    ).json()
-    #{'uid': '89b15583-7528-4c0c-a18e-28155be08d21', 'status': 'DONE', 'message': 'Recording started'}
-
-    if response.get('error'):
-        # {'error': 'No system is available to record.'}
-        print(response['error'])
-        sys.exit(1)
-    else:
-        print(response.get('message'))
-        # can be UNAVAILABLE, READY, INITIALIZING, RUNNING
-        # https://mirismanager.ubicast.eu/static/docs/api/values.html
-        while not get_status(session) == 'RUNNING':
-            time.sleep(1)
-            if get_status(session) == 'UNAVAILABLE':
-                print('Profile does not exist or no system is online')
-                sys.exit(1)
-        print('System is recording, stopping now')
-
-        print('Stop recording')
-        data['action'] = 'STOP_RECORDING'
-        session.post(
-            URL + '/api/v3/fleet/control/run-command/',
-            headers=headers,
+        print('Start recording')
+        response = session.post(
+            f'{args.url}/api/v3/fleet/control/run-command/',
+            headers={'api-key': args.api_key},
             data=data
-        )
+        ).json()
+        #{'uid': '89b15583-7528-4c0c-a18e-28155be08d21', 'status': 'DONE', 'message': 'Recording started'}
+
+        if response.get('error'):
+            # {'error': 'No system is available to record.'}
+            print(response['error'])
+            return 1
+        else:
+            print(response.get('message'))
+            # can be UNAVAILABLE, READY, INITIALIZING, RUNNING
+            # https://mirismanager.ubicast.eu/static/docs/api/values.html
+            while not get_status(args, session) == 'RUNNING':
+                time.sleep(1)
+                if get_status(args, session) == 'UNAVAILABLE':
+                    print('Profile does not exist or no system is online')
+                    return 1
+            print('System is recording, stopping now')
+
+            print('Stop recording')
+            data['action'] = 'STOP_RECORDING'
+            session.post(
+                f'{args.url}/api/v3/fleet/control/run-command/',
+                headers={'api-key': args.api_key},
+                data=data
+            )
+    return 0
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        '--url',
+        dest='url',
+        default='https://mirismanager.ubicast.eu',
+        help='The Miris Manager server URL.',
+        required=False,
+        type=str,
+    )
+    parser.add_argument(
+        '--api-key',
+        dest='api_key',
+        help='The Miris Manager API key to use.',
+        required=True,
+        type=str,
+    )
+    parser.add_argument(
+        '--profile',
+        dest='profile',
+        default='showroom',
+        help='The profile.',
+        required=False,
+        type=str,
+    )
+    args = parser.parse_args()
+
+    sys.exit(main(args))

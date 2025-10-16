@@ -2,11 +2,12 @@
 '''
 Fake MediaCoder client for tests.
 '''
+import argparse
 import json
 import logging
 import os
-import sys
 import time
+
 from mm_client.client import MirisManagerClient
 
 logger = logging.getLogger('recorder_controller')
@@ -96,5 +97,14 @@ class RecorderController(MirisManagerClient):
 
 
 if __name__ == '__main__':
-    local_conf = sys.argv[1] if len(sys.argv) > 1 else None
-    RecorderController(local_conf)
+    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser.add_argument(
+        'conf',
+        default=None,
+        help='The path of the configuration to use.',
+        nargs='?',
+        type=str,
+    )
+    args = parser.parse_args()
+
+    RecorderController(args.conf)

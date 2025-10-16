@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 This scripts aims to convert an indico calendar to MirisManager calendar entries.
 
@@ -112,7 +112,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description=__doc__.strip())
     parser.add_argument('-n', '--dry-run', action='store_true', help='dry run')
     parser.add_argument('-m', '--mm-url', type=str, action='store',
                         help='miris manager URL')
