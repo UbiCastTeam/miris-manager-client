@@ -49,4 +49,4 @@ log_level = "DEBUG"
 testpaths = "tests/"
 
 [tool.coverage.run]
-source_dirs = ["mm_client"]
+source_dirs = ["mm_client", "examples"]
