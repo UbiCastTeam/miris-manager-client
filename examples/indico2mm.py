@@ -112,7 +112,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__.strip())
+    parser = argparse.ArgumentParser(description=__doc__.strip(), formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-n', '--dry-run', action='store_true', help='dry run')
     parser.add_argument('-m', '--mm-url', type=str, action='store',
                         help='miris manager URL')
