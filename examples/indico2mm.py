@@ -129,7 +129,9 @@ def main(args):
                 print(f"dry run: calling add-event with {headers} and {data}")
 
         if created_uids:
-            cmd = f'curl -w "\\n" -H "api-key:{args.mm_api_key}" -H "system:{args.system}" -d "uid={{uid}}" https://skyreach.ubicast.net/api/v3/fleet/calendars/delete-event/'
+            cmd = f'curl -w "\\n" -H "api-key:{args.mm_api_key}" \
+                    -H "system:{args.system}" -d "uid={{uid}}" \
+                    https://skyreach.ubicast.net/api/v3/fleet/calendars/delete-event/'
             with open(uid_filename, "w") as fh:
                 fh.write("set -e\n\n")
                 fh.write(
