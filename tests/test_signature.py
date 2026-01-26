@@ -42,7 +42,7 @@ def test_signature__configured():
         'the difference between the request time and the current time is too large.',
         id='expired'),
     pytest.param(
-        {'time': datetime.datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S_%f'), 'hmac': 'test'},
+        {'time': datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d_%H-%M-%S_%f'), 'hmac': 'test'},
         'the received and computed HMAC values do not match.',
         id='hmac'),
 ])

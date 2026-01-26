@@ -2,7 +2,6 @@
 Miris Manager long polling management
 This module is not intended to be used directly, only the client class should be used.
 '''
-import datetime
 import logging
 import os
 import signal
@@ -39,13 +38,13 @@ class LongPollingManager():
         signal.signal(signal.SIGTERM, exit_handler)
 
         while self.loop_running:
-            start = datetime.datetime.utcnow()
+            start = time.time()
             success = self.call_long_polling()
             if single_loop:
                 break
             if not success:
                 # Avoid starting too often new connections
-                duration = (datetime.datetime.utcnow() - start).seconds
+                duration = time.time() - start
                 if duration < 5:
                     time.sleep(5 - duration)
 
