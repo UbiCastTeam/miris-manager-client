@@ -59,7 +59,7 @@ class LongPollingManager():
                 if self.last_error == e.__class__.__name__:
                     logger.debug(msg)  # Avoid spamming
                 else:
-                    logger.error(msg)
+                    logger.warning(msg)
                     self.last_error = e.__class__.__name__
         else:
             self.last_error = None
@@ -71,7 +71,7 @@ class LongPollingManager():
                     status, data = self.process_long_polling(response)
                 except Exception as e:
                     success = False
-                    logger.error('Failed to process response: %s\n%s', e, traceback.format_exc())
+                    logger.warning('Failed to process response: %s\n%s', e, traceback.format_exc())
                     self.client.set_command_status(uid, 'FAILED', str(e))
                     if os.environ.get('CI_PIPELINE_ID'):
                         # Propagate exception so that it can be detected in CI
@@ -100,9 +100,9 @@ class LongPollingManager():
             return 'DONE', ''
         status, data = self.client.handle_action(uid=uid, action=action, params=params)
         if status not in ('DONE', 'IN_PROGRESS', 'FAILED'):
-            logger.error('Your client has returned an invalid status in "handle_action".')
+            logger.warning('Your client has returned an invalid status in "handle_action".')
             raise ValueError('An error occurred during the processing of the action by the client.')
         if data is not None and not isinstance(data, str):
-            logger.error('Your client has returned an invalid type for data in "handle_action".')
+            logger.warning('Your client has returned an invalid type for data in "handle_action".')
             raise ValueError('An error occurred during the processing of the action by the client.')
         return status, data

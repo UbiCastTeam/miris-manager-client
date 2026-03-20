@@ -142,7 +142,7 @@ class SSHTunnelManager():
             self.update_ssh_state('control_port', 0)
             self.update_ssh_state('maintenance_port', 0)
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
-            logger.error('Cannot prepare ssh tunnel : %s', str(e))
+            logger.warning('Cannot prepare ssh tunnel: %s', str(e))
             return
         ssh_user = response.get('ssh_user')
         if ssh_user and ssh_user != self.ssh_tunnel_state['ssh_user']:
@@ -256,7 +256,7 @@ class SSHTunnelManager():
                 try:
                     success = self.establish_tunnel()
                 except Exception as e:
-                    logger.error('error while establishing tunnel %s', e)
+                    logger.warning('Failed to establishing tunnel: %s', e)
                 if need_retry or not success:
                     self._wait(thread_event)
             else:
@@ -283,7 +283,7 @@ class SSHTunnelManager():
                 ssh_logs = str(e)
             self.update_ssh_state('state', 'error')
             self.update_ssh_state('last_tunnel_info', ssh_logs)
-            logger.error('SSH tunnel process has terminated with: %s', ssh_logs)
+            logger.warning('SSH tunnel process has terminated with: %s', ssh_logs)
             need_retry = True
         else:
             # process is still alive
@@ -303,7 +303,7 @@ class SSHTunnelManager():
                         else:
                             logger.warning('[SSH stdout] %s', ssh_stdout)
                     elif pattern_id_found not in ['connecting', 'connected', 'authenticated', 'running']:
-                        logger.error(
+                        logger.warning(
                             (
                                 'Need to retry tunnel '
                                 '(ssh port: %s, remote control port: %s, remote maintenance port: %s) '
@@ -317,7 +317,7 @@ class SSHTunnelManager():
                         need_retry = True
                         break
             except OSError as e:
-                logger.error(e)
+                logger.warning('OSError while running SSH tunnel: %s', e)
                 need_retry = True
         return need_retry
 

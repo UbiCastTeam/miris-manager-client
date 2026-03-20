@@ -156,7 +156,7 @@ class MirisManagerClient():
                 try:
                     self._register()
                 except Exception as e:
-                    logger.error('Registration failed: %s', e)
+                    logger.warning('Registration failed: %s', e)
                     raise
             # Add signature in headers
             # headers with "_" are ignored by Django
@@ -212,7 +212,7 @@ class MirisManagerClient():
                 data=data or '',
             ))
         except Exception as e:
-            logger.error('Unable to communicate command status: %s %s', type(e), e)
+            logger.warning('Unable to communicate command status: %s %s', type(e), e)
 
     def set_info(self):
         data = info_lib.get_host_info(self.conf['SERVER_URL'])
