@@ -9,7 +9,7 @@ from pathlib import Path
 
 from ..conf import BASE_CONF
 
-logger = logging.getLogger('mm_client.lib.configuration')
+logger = logging.getLogger('mirismanagerclient.lib.configuration')
 
 
 def load_conf(default_conf=None, local_conf=None):

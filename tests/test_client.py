@@ -25,7 +25,7 @@ def mocked_request(*args, **kwargs):
     if url == CONFIG['SERVER_URL'] + '/api/v3/fleet/control/set-command-status/':
         return MockResponse({}, 200)
     if url == CONFIG['SERVER_URL'] + '/remote-event/v3':
-        from mm_client.lib.signing import get_signature
+        from mirismanagerclient.lib.signing import get_signature
         data = get_signature(CONFIG)
         data.update({
             'uid': 'test_uid',
@@ -40,7 +40,7 @@ def mocked_request(*args, **kwargs):
 @patch('requests.post', side_effect=mocked_request)
 @patch('requests.get', side_effect=mocked_request)
 def test_client(mock_get, mock_post):
-    from mm_client.client import MirisManagerClient
+    from mirismanagerclient import MirisManagerClient
     mmc = MirisManagerClient(local_conf=CONFIG)
     response = mmc.api_request('PING')
     assert isinstance(response, dict)
@@ -53,7 +53,7 @@ def test_client(mock_get, mock_post):
 @patch('requests.post', side_effect=mocked_request)
 @patch('requests.get', side_effect=mocked_request)
 def test_long_polling(mock_get, mock_post):
-    from mm_client.client import MirisManagerClient
+    from mirismanagerclient import MirisManagerClient
 
     commands = []
 

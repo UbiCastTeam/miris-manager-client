@@ -4,7 +4,7 @@ Script to ping a Miris Manager server.
 '''
 import argparse
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 
 if __name__ == '__main__':

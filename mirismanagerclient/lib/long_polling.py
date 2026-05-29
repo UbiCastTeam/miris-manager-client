@@ -11,7 +11,7 @@ import traceback
 
 from .signing import check_signature
 
-logger = logging.getLogger('mm_client.lib.long_polling')
+logger = logging.getLogger('mirismanagerclient.lib.long_polling')
 
 
 class LongPollingManager():

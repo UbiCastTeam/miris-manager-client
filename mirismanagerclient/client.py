@@ -12,7 +12,7 @@ from .lib import long_polling as long_polling_lib
 from .lib import signing as signing_lib
 from .lib import ssh_tunnel as ssh_tunnel_lib
 
-logger = logging.getLogger('mm_client.client')
+logger = logging.getLogger('mirismanagerclient')
 
 
 class MirisManagerRequestError(Exception):

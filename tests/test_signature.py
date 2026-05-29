@@ -4,7 +4,7 @@ import pytest
 
 
 def test_signature__default():
-    from mm_client.lib.signing import get_signature, check_signature
+    from mirismanagerclient.lib.signing import get_signature, check_signature
 
     conf = {}
 
@@ -15,7 +15,7 @@ def test_signature__default():
 
 
 def test_signature__configured():
-    from mm_client.lib.signing import get_signature, check_signature
+    from mirismanagerclient.lib.signing import get_signature, check_signature
 
     conf = {
         'SECRET_KEY': 'the secret key',
@@ -47,7 +47,7 @@ def test_signature__configured():
         id='hmac'),
 ])
 def test_signature__invalid(signature, expected):
-    from mm_client.lib.signing import check_signature
+    from mirismanagerclient.lib.signing import check_signature
 
     conf = {
         'SECRET_KEY': 'the secret key',

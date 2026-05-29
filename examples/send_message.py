@@ -5,7 +5,7 @@ Script to send a message
 import argparse
 import datetime
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ import logging
 import os
 import time
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 logger = logging.getLogger('recorder_controller')
 
@@ -43,9 +43,9 @@ class RecorderController(MirisManagerClient):
 
     def handle_action(self, uid, action, params):
         # See help on the handle action function:
-        # https://github.com/UbiCastTeam/miris-manager-client/blob/main/mm_client/client.py#L184
+        # https://github.com/UbiCastTeam/miris-manager-client/blob/main/mirismanagerclient/client.py#L184
         # Possible actions:
-        # https://mirismanager.ubicast.eu/static/skyreach/docs/api/values.html#system-command-actions
+        # https://mirismanager.ubicast.eu/static/skyreach/docs/api-v3/values.html#system-command-actions
         if action == 'START_RECORDING':
             logger.info('Starting recording with params %s', params)
             self.set_status(

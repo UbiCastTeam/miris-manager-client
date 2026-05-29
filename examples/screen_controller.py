@@ -6,7 +6,7 @@ import argparse
 import logging
 import os
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 logger = logging.getLogger('screen_controller')
 

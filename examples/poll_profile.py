@@ -6,7 +6,7 @@ The script is intended to be used with a user API key and not a system API key.
 import argparse
 import time
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 
 if __name__ == '__main__':

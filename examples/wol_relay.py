@@ -7,7 +7,7 @@ import logging
 import os
 import re
 
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 
 logger = logging.getLogger('wol_relay')
 
@@ -29,9 +29,9 @@ class WOLRelay(MirisManagerClient):
 
     def handle_action(self, uid, action, params):
         # See help on the handle action function:
-        # https://github.com/UbiCastTeam/miris-manager-client/blob/main/mm_client/client.py#L184
+        # https://github.com/UbiCastTeam/miris-manager-client/blob/main/mirismanagerclient/client.py#L184
         # Possible actions:
-        # https://mirismanager.ubicast.eu/static/skyreach/docs/api/values.html#system-command-actions
+        # https://mirismanager.ubicast.eu/static/skyreach/docs/api-v3/values.html#system-command-actions
         if action == 'WAKE_ON_LAN':  # wol_relay capability
             # Send wake on lan
             success, message = self.send_wake_on_lan(params)

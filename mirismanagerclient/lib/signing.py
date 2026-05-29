@@ -8,7 +8,7 @@ import hashlib
 import hmac
 import logging
 
-logger = logging.getLogger('mm_client.lib.signing')
+logger = logging.getLogger('mirismanagerclient.lib.signing')
 
 
 def get_signature(conf):

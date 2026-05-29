@@ -3,15 +3,15 @@
 
 # UbiCast Miris Manager client
 
-A Python3 client to use UbiCast Miris Manager remote control API.
+A Python3 reference implementation of an UbiCast Miris Manager API client.
 
-This client is intended to act as a system in Miris Manager so it allows you to integrate a device in order to control it using Miris Manager.
+The API documentation is available on each Miris Manager portal at [/static/skyreach/docs/api-v3/index.html](https://mirismanager.ubicast.eu/static/skyreach/docs/api-v3/index.html).
 
 
 ## Requirements
 
-* python >= 3.11 (download the latest stable release from https://www.python.org/downloads/)
-* python3-requests >= 2.30
+* python >= 3.13 (download the latest stable release from https://www.python.org/downloads/)
+* python3-requests >= 2.32
 
 
 ## Important
@@ -21,7 +21,7 @@ For production use, it is recommended to use the branch named "stable". The "mai
 
 ## Client class instantiation
 
-The client class (`mm_client`.`client`.`MirisManagerClient`) takes two arguments:
+The client class (`mirismanagerclient`.`client`.`MirisManagerClient`) takes two arguments:
 * `local_conf`: This argument can be either a dict or a path (`str` object). The default value is `None`, which means no configuration.
 * `setup_logging`: This argument must be a boolean. If set to `True`, the logging to console will be configured. The default value is `True`.
 
@@ -29,9 +29,11 @@ The client class (`mm_client`.`client`.`MirisManagerClient`) takes two arguments
 ## Configuration
 
 You can see available parameters in the default configuration file :
-[Default configuration](/mm_client/conf.py)
+[Default configuration](/mirismanagerclient/conf.py)
 
 The local configuration should be a json file.
+
+A user API key or a system API key can be used. If a system API key is used, a secret key must be provided.
 
 
 ## Notes about older client
@@ -51,7 +53,7 @@ If you are using the first version of this client (commit `33b554991303b573254d5
 ### Ping the server
 
 ``` python
-from mm_client.client import MirisManagerClient
+from mirismanagerclient import MirisManagerClient
 mmc = MirisManagerClient(local_conf='your-conf.json')
 
 response = mmc.api_request('PING')

@@ -1,27 +1,20 @@
-DOCKER_IMAGE_NAME ?= mm-client:latest
-DOCKER_WORK_DIR ?= /opt/src
-DOCKER_RUN ?= docker run --rm -it --user "$(shell id -u):$(shell id -g)" -v ${CURDIR}:${DOCKER_WORK_DIR}
+DOCKER_IMAGE ?= miris-manager-client:latest
+DOCKER_RUN ?= docker run --rm --user "$(shell id -u):$(shell id -g)" -v ${CURDIR}:/opt/src
 
 build:
-	docker build -t ${DOCKER_IMAGE_NAME} ${BUILD_ARGS} .
+	docker build -t ${DOCKER_IMAGE} ${BUILD_ARGS} .
 
 rebuild:BUILD_ARGS = --no-cache
 rebuild:build
 
 lint:
-	${DOCKER_RUN} ${DOCKER_IMAGE_NAME} make lint_local
+	${DOCKER_RUN} -e "RUFF_ARGS=${RUFF_ARGS}" ${DOCKER_IMAGE} make lint_local
 
 lint_local:
-	flake8 .
-
-typing:
-	${DOCKER_RUN} ${DOCKER_IMAGE_NAME} make typing_local
-
-typing_local:
-	mypy mm_client
+	ruff check ${RUFF_ARGS}
 
 deadcode:
-	${DOCKER_RUN} ${DOCKER_IMAGE_NAME} make deadcode_local
+	${DOCKER_RUN} ${DOCKER_IMAGE} make deadcode_local
 
 deadcode_local:
 	vulture --exclude .eggs --min-confidence 90 .
@@ -30,10 +23,10 @@ network_create:
 	@docker network create ubicast_network > /dev/null 2>&1 || true
 
 shell:network_create
-	${DOCKER_RUN} --network ubicast_network --network-alias=mmclient ${DOCKER_IMAGE_NAME} /bin/bash
+	${DOCKER_RUN} -it --network ubicast_network --network-alias=miris-manager-client ${DOCKER_IMAGE} /bin/sh
 
 test:
-	${DOCKER_RUN} -e "PYTEST_ARGS=${PYTEST_ARGS}" ${DOCKER_IMAGE_NAME} make test_local
+	${DOCKER_RUN} -e "PYTEST_ARGS=${PYTEST_ARGS}" ${DOCKER_IMAGE} make test_local
 
 test_local:PYTEST_ARGS := $(or ${PYTEST_ARGS},--cov --no-cov-on-fail --junitxml=report.xml --cov-report xml --cov-report term --cov-report html)
 test_local:
@@ -46,7 +39,7 @@ publish:
 		-e "TWINE_USERNAME=${TWINE_USERNAME}" \
 		-e "TWINE_PASSWORD=${TWINE_PASSWORD}" \
 		-v ${PWD}/.local:/.local \
-		${DOCKER_IMAGE_NAME} make publish_local
+		${DOCKER_IMAGE} make publish_local
 	@rm -rf .local
 
 publish_local:

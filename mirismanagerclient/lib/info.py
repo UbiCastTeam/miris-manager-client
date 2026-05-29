@@ -7,7 +7,7 @@ import socket
 import uuid
 import os
 
-logger = logging.getLogger('mm_client.lib.info')
+logger = logging.getLogger('mirismanagerclient.lib.info')
 
 
 def get_host_info(url):

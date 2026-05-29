@@ -12,7 +12,7 @@ def conf_path():
 
 
 def test_conf_file__valid(conf_path):
-    from mm_client.lib.configuration import load_conf, update_conf
+    from mirismanagerclient.lib.configuration import load_conf, update_conf
 
     conf = load_conf(default_conf=conf_path)
     assert conf['SERVER_URL'] == 'https://test'
@@ -22,7 +22,7 @@ def test_conf_file__valid(conf_path):
 
 
 def test_conf_file__does_not_exist(conf_path):
-    from mm_client.lib.configuration import load_conf, update_conf
+    from mirismanagerclient.lib.configuration import load_conf, update_conf
 
     conf_path.unlink()
     conf = load_conf(default_conf=conf_path)
@@ -33,7 +33,7 @@ def test_conf_file__does_not_exist(conf_path):
 
 
 def test_conf_dict():
-    from mm_client.lib.configuration import load_conf, update_conf
+    from mirismanagerclient.lib.configuration import load_conf, update_conf
 
     conf = load_conf(
         default_conf={'SERVER_URL': 'https://nope'},
@@ -46,7 +46,7 @@ def test_conf_dict():
 
 
 def test_conf_default():
-    from mm_client.lib.configuration import load_conf, update_conf
+    from mirismanagerclient.lib.configuration import load_conf, update_conf
 
     conf = load_conf()
     assert conf['SERVER_URL'] == 'https://mirismanager'
@@ -66,7 +66,7 @@ def test_conf_default():
         id='valid'),
 ])
 def test_conf_check(conf, is_valid):
-    from mm_client.lib.configuration import check_conf
+    from mirismanagerclient.lib.configuration import check_conf
 
     if is_valid:
         check_conf(conf)

@@ -14,7 +14,7 @@ import re
 import signal
 from pathlib import Path
 
-logger = logging.getLogger('mm_client.lib.ssh_tunnel')
+logger = logging.getLogger('mirismanagerclient.lib.ssh_tunnel')
 
 
 class MirisManagerTunnelError(Exception):
