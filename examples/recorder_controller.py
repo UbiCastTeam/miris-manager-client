@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-'''
+"""
 Fake MediaCoder client for tests.
-'''
+"""
 import argparse
 import json
 import logging

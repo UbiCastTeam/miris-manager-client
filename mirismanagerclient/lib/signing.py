@@ -1,14 +1,14 @@
-'''
+"""
 Miris Manager client signing functions
 This module is not intended to be used directly, only the client class should be used.
-'''
+"""
 import base64
 import datetime
 import hashlib
 import hmac
 import logging
 
-logger = logging.getLogger('mirismanagerclient.lib.signing')
+logger = logging.getLogger(__name__)
 
 
 def get_signature(conf):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-'''
+"""
 A script to send a screenshot and handle click requests.
-'''
+"""
 import argparse
 import logging
 import os

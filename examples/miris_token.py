@@ -2,9 +2,10 @@
 """
 Script to get the URL of the web user interface of a recorder with a valid access token.
 """
-import requests
-import json
 import argparse
+import json
+
+import requests
 
 
 def main(args):

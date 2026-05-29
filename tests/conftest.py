@@ -1,9 +1,8 @@
-import sys
 from pathlib import Path
-
-import urllib3
+import sys
 
 import pytest
+import urllib3
 
 
 @pytest.fixture(scope='session', autouse=True)

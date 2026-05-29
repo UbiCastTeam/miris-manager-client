@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-'''
+"""
 Script to send a message
-'''
+"""
 import argparse
 import datetime
 
 from mirismanagerclient import MirisManagerClient
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__.strip())

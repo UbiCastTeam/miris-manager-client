@@ -49,3 +49,38 @@ testpaths = "tests/"
 
 [tool.coverage.run]
 source_dirs = ["mirismanagerclient", "examples"]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+respect-gitignore = true
+exclude = [".git", "submodules"]
+
+[tool.ruff.format]
+indent-style = "space"
+quote-style = "single"
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules/
+select = ["A", "B", "E", "F", "G", "I", "N", "Q"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "single"
+
+[tool.ruff.lint.isort]
+case-sensitive = false
+force-sort-within-sections = true
+force-wrap-aliases = true
+combine-as-imports = true
+forced-separate = ["tests"]
+order-by-type = false
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+split-on-trailing-comma = true

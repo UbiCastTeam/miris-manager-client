@@ -1,20 +1,20 @@
-'''
+"""
 Miris Manager SSH tunnel management
 This module is not intended to be used directly, only the client class should be used.
 
 The SSH tunnel goal is to access the system web interface (HTTPS) from
 Miris Manager using a connection from the system to the Miris Manager.
-'''
+"""
 import logging
-import os
-import subprocess
-import time
 import multiprocessing
+import os
+from pathlib import Path
 import re
 import signal
-from pathlib import Path
+import subprocess
+import time
 
-logger = logging.getLogger('mirismanagerclient.lib.ssh_tunnel')
+logger = logging.getLogger(__name__)
 
 
 class MirisManagerTunnelError(Exception):
@@ -142,7 +142,7 @@ class SSHTunnelManager():
             self.update_ssh_state('control_port', 0)
             self.update_ssh_state('maintenance_port', 0)
             self.update_ssh_state('command', ['PREPARE_TUNNEL', self.client.conf['SERVER_URL']])
-            logger.warning('Cannot prepare ssh tunnel: %s', str(e))
+            logger.warning('Cannot prepare ssh tunnel: %s', e)
             return
         ssh_user = response.get('ssh_user')
         if ssh_user and ssh_user != self.ssh_tunnel_state['ssh_user']:
@@ -198,7 +198,7 @@ class SSHTunnelManager():
     def _try_closing_process(self):
         if self.process:
             timeout = 5
-            logger.debug('Waiting %ss for ssh process to terminate' % timeout)
+            logger.debug('Waiting %ss for ssh process to terminate', timeout)
             self.process.terminate()
             while self.process and self.process.poll() is None and timeout != 0:
                 timeout -= 1

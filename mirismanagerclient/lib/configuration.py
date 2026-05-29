@@ -1,22 +1,22 @@
-'''
+"""
 Miris Manager client library
 This module is not intended to be used directly, only the client class should be used.
-'''
+"""
 import json
 import logging
-import re
 from pathlib import Path
+import re
 
 from ..conf import BASE_CONF
 
-logger = logging.getLogger('mirismanagerclient.lib.configuration')
+logger = logging.getLogger(__name__)
 
 
 def load_conf(default_conf=None, local_conf=None):
     # copy default configuration
     conf = BASE_CONF.copy()
     # update with default and local configuration
-    for index, conf_override in enumerate((default_conf, local_conf)):
+    for _index, conf_override in enumerate((default_conf, local_conf)):
         if not conf_override:
             continue
         if isinstance(conf_override, str):

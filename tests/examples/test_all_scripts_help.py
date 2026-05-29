@@ -3,7 +3,6 @@ import subprocess
 
 import pytest
 
-
 all_scripts = [
     pytest.param(p, id=p.name)
     for p in sorted(Path('examples').iterdir())

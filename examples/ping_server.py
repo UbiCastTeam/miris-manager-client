@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-'''
+"""
 Script to ping a Miris Manager server.
-'''
+"""
 import argparse
 
 from mirismanagerclient import MirisManagerClient
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__.strip())

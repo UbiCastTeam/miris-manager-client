@@ -1,7 +1,7 @@
-'''
+"""
 Miris Manager long polling management
 This module is not intended to be used directly, only the client class should be used.
-'''
+"""
 import logging
 import os
 import signal
@@ -11,7 +11,7 @@ import traceback
 
 from .signing import check_signature
 
-logger = logging.getLogger('mirismanagerclient.lib.long_polling')
+logger = logging.getLogger(__name__)
 
 
 class LongPollingManager():
@@ -26,7 +26,7 @@ class LongPollingManager():
         # Check if systemd-notify should be called
         self.run_systemd_notify = self.client.conf.get('WATCHDOG') and os.system('which systemd-notify') == 0
         # Start connection loop
-        logger.info('Starting long polling to %s' % self.client.conf['SERVER_URL'])
+        logger.info('Starting long polling to %s', self.client.conf['SERVER_URL'])
         self.loop_running = True
 
         def exit_handler(*args, **kwargs):

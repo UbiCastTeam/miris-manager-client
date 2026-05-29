@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-'''
+"""
 A script to create devices acting as wake on lan relay.
-'''
+"""
 import argparse
 import logging
 import os

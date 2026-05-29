@@ -3,8 +3,8 @@
 Script to import a pretalx schedule in the calendar of a Miris Manager system.
 """
 import argparse
-import json
 from datetime import datetime, timedelta
+import json
 
 import requests
 

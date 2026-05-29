@@ -1,18 +1,20 @@
-'''
+"""
 Miris Manager client main module
-'''
+"""
 import logging
 from pathlib import Path
 
 import requests
 
-from .lib import configuration as configuration_lib
-from .lib import info as info_lib
-from .lib import long_polling as long_polling_lib
-from .lib import signing as signing_lib
-from .lib import ssh_tunnel as ssh_tunnel_lib
+from .lib import (
+    configuration as configuration_lib,
+    info as info_lib,
+    long_polling as long_polling_lib,
+    signing as signing_lib,
+    ssh_tunnel as ssh_tunnel_lib,
+)
 
-logger = logging.getLogger('mirismanagerclient')
+logger = logging.getLogger(__name__)
 
 
 class MirisManagerRequestError(Exception):
@@ -23,9 +25,9 @@ class MirisManagerRequestError(Exception):
 
 
 class MirisManagerClient():
-    '''
+    """
     Miris Manager client class
-    '''
+    """
     DEFAULT_CONF = None  # can be either a dict or a path (`str` object)
 
     def __init__(self, local_conf=None, setup_logging=True):

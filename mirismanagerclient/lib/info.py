@@ -1,19 +1,19 @@
-'''
+"""
 Miris Manager client library
 This module is not intended to be used directly, only the client class should be used.
-'''
+"""
 import logging
+import os
 import socket
 import uuid
-import os
 
-logger = logging.getLogger('mirismanagerclient.lib.info')
+logger = logging.getLogger(__name__)
 
 
 def get_host_info(url):
-    '''
+    """
     Collect information on local system.
-    '''
+    """
     # get hostname
     hostname = socket.gethostname()
     # get local IP address
@@ -43,21 +43,21 @@ def get_host_info(url):
         local_ip=local_ip,
         mac=mac,
     )
-    logger.debug('[%s] Client info is %s' % (host, info))
+    logger.debug('[%s] Client info is %s', host, info)
     return info
 
 
 def get_free_space_bytes(path):
-    '''
+    """
     Get free space on partition used for given path.
-    '''
+    """
     statvfs = os.statvfs(path)
     free = statvfs.f_frsize * statvfs.f_bavail
     return free
 
 
 def get_remaining_space():
-    '''
+    """
     Return remaining space in /home in MB.
-    '''
+    """
     return int(get_free_space_bytes('/home') / 1000000)

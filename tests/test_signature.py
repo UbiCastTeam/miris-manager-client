@@ -4,7 +4,7 @@ import pytest
 
 
 def test_signature__default():
-    from mirismanagerclient.lib.signing import get_signature, check_signature
+    from mirismanagerclient.lib.signing import check_signature, get_signature
 
     conf = {}
 
@@ -15,7 +15,7 @@ def test_signature__default():
 
 
 def test_signature__configured():
-    from mirismanagerclient.lib.signing import get_signature, check_signature
+    from mirismanagerclient.lib.signing import check_signature, get_signature
 
     conf = {
         'SECRET_KEY': 'the secret key',
