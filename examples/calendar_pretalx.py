@@ -62,6 +62,7 @@ def import_pretalx_events(args, schedule):
                 'time_zone': 'Europe/Paris',
                 'command': 'record',
                 'parameters': json.dumps(parameters),
+                'enabled': 'yes' if args.enable_event else 'no',
             }
 
             print(f'about to post: {pprint.pformat(data)}')
@@ -75,16 +76,15 @@ def import_pretalx_events(args, schedule):
 
 
 if __name__ == '__main__':
-    # Minimal parser holding only what the pre-parsing needs to fetch the
-    # schedule; "add_help=False" so it does not print usage before the
-    # "--room-name" argument (and its room choices) is added. It is reused as a
-    # parent of the final parser, which lists the rooms in usage.
     early_parser = argparse.ArgumentParser(add_help=False)
-    early_parser.add_argument(
+    # Keep this NOT required here even though we want it required overall: a
+    # "required=True" makes "parse_known_args" below run argparse's required
+    # check and exit before "-h/--help" can reach the final parser, so a bare
+    # "--help" would never work. We flip it to required on the final parser
+    # below (after the pre-parse), where "-h/--help" fires first and still works.
+    pretalx_url_action = early_parser.add_argument(
         '--pretalx-url',
-        default='https://pretalx_host/event/schedule/export/schedule.json',
-        help='The URL of the pretalx schedule.',
-        required=False,
+        help='The URL of the pretalx schedule. (Ex: https://pretalx_host/event/schedule/export/schedule.json)',
         type=str,
     )
     early_parser.add_argument(
@@ -94,16 +94,31 @@ if __name__ == '__main__':
     )
 
     # Fetch the schedule first so the room name can be validated against the
-    # rooms actually present in it (offered as argparse choices).
+    # rooms actually present in it (offered as argparse choices). Skip the fetch
+    # when no URL was given (e.g. a bare "--help") and tolerate a failed fetch,
+    # so the final parser still prints a valid help, just without room choices.
     pre_args, _ = early_parser.parse_known_args()
-    schedule = get_schedule(pre_args.pretalx_url, use_cache=not pre_args.no_cache)
-    rooms = get_rooms(schedule)
+    schedule = None
+    rooms = []
+    if pre_args.pretalx_url:
+        try:
+            schedule = get_schedule(pre_args.pretalx_url, use_cache=not pre_args.no_cache)
+            rooms = get_rooms(schedule)
+        except requests.RequestException:
+            pass
 
     # Build the final parser from the early parser; "add_help" defaults to True
     # here, so help is available and now lists the rooms below.
     parser = argparse.ArgumentParser(
         description=__doc__ and __doc__.strip(),
         parents=[early_parser],
+    )
+    # Now require the URL: this shared Action is enforced by the final parser's
+    # "parse_args", which handles "-h/--help" first, so help still works while a
+    # real run without "--pretalx-url" errors as required.
+    pretalx_url_action.required = True
+    parser.add_argument(
+        '-e', '--enable-event', action='store_true', help='enable the event'
     )
     parser.add_argument(
         '--url',
@@ -136,10 +151,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-r',
         '--room-name',
-        choices=rooms,
+        choices=rooms or None,
         help='room name (one of the rooms found in the pretalx schedule)',
     )
     args = parser.parse_args()
+    if schedule is None:
+        parser.error(f'could not fetch the pretalx schedule from {pre_args.pretalx_url!r}; check --pretalx-url')
     if args.room_name is None:
         parser.error(f'the following argument is required: -r/--room-name; choose one of: {", ".join(rooms)}')
 
