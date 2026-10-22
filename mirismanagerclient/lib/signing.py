@@ -41,8 +41,7 @@ def check_signature(conf, rdata):
     except Exception:
         return 'the received hmac is invalid.'
     utcnow = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-    diff = utcnow - rdate if utcnow > rdate else rdate - utcnow
-    if diff.seconds > 300:
+    if abs((utcnow - rdate).total_seconds()) > 300:
         return 'the difference between the request time and the current time is too large.'
     to_sign = 'time=%s|api_key=%s' % (remote_time, conf['API_KEY'])
     hm = hmac.new(
@@ -50,6 +49,6 @@ def check_signature(conf, rdata):
         msg=to_sign.encode('utf-8'),
         digestmod=hashlib.sha256
     ).digest()
-    if rhmac != hm:
+    if not hmac.compare_digest(rhmac, hm):
         return 'the received and computed HMAC values do not match.'
     return None
